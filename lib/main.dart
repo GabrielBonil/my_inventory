@@ -31,7 +31,7 @@ class App extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: "MyInventory",
       routes: {
-        '/item_list': (context) => ItemListPage(filtrar: const ['all']),
+        '/item_list': (context) => const ItemListPage(),
         '/item_create': (context) => const ItemCreatePage(),
         '/user_login': (context) => const UserLoginPage(),
         '/user_register': (context) => const UserRegisterPage(),
@@ -53,21 +53,21 @@ class LoginState extends StatelessWidget {
               snapshot.connectionState == ConnectionState.active &&
                   !snapshot.hasData
           ? const UserLoginPage()
-          : ItemListPage(filtrar: const ['all']),
+          : const ItemListPage(),
     );
   }
 }
 
-class GetItemList{
-  Future<List<String>> getPlaces() async {
-    List<String> filtrar = ['all'];
-    final CollectionReference places = FirebaseFirestore.instance.collection('places');
-    QuerySnapshot queryPlaces = await places.get();
-    DocumentSnapshot documentPlace = queryPlaces.docs.first;
-    List<dynamic> arrayField = documentPlace['place'];
-    for (var i in arrayField) {
-      filtrar.add(i.toString());
-    }
-    return filtrar;
-  }
-}
+// class GetItemList{
+//   Future<List<String>> getPlaces() async {
+//     List<String> filtrar = ['all'];
+//     final CollectionReference places = FirebaseFirestore.instance.collection('places');
+//     QuerySnapshot queryPlaces = await places.get();
+//     DocumentSnapshot documentPlace = queryPlaces.docs.first;
+//     List<dynamic> arrayField = documentPlace['place'];
+//     for (var i in arrayField) {
+//       filtrar.add(i.toString());
+//     }
+//     return filtrar;
+//   }
+// }

@@ -1,12 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:tg/components/my_items.dart';
 import 'package:tg/components/my_list_view.dart';
+import 'package:tg/components/loading.dart';
 
 class ItemListPage extends StatefulWidget {
-  List<String> filtrar;
-  ItemListPage({super.key, required this.filtrar});
-  
+  // List<String> filtrar;
+  const ItemListPage({
+    super.key,
+    /* required this.filtrar */
+  });
+
   @override
   State<ItemListPage> createState() => _ItemListPageState();
 }
@@ -22,13 +27,13 @@ class _ItemListPageState extends State<ItemListPage> {
   var finalizados = false;
   var pendentes = false;
   String pesquisar = '';
-  var dropdownValue;
+  bool subCollectionsExist = false;
+  late List<String> subColecoes;
+  List<DocumentSnapshot> outrosDocumentos = [];
 
   @override
   void initState() {
     super.initState();
-    print(widget.filtrar);
-    dropdownValue = widget.filtrar[0];
     if (auth.currentUser == null) {
       logado = false;
     }
@@ -39,66 +44,6 @@ class _ItemListPageState extends State<ItemListPage> {
       appBar: AppBar(
         title: const Text("Items"),
         actions: [
-          //Botão Dropdown que organiza como vai ser ordenado os itens
-          DropdownButton(
-            focusColor: Colors.transparent,
-            underline: const SizedBox.shrink(),
-            value: dropdownValue,
-            items: widget.filtrar.map((e) {
-              return DropdownMenuItem<String>(
-                value: e,
-                child: Text(e),
-              );
-            }).toList(),
-            onChanged: (newValue) {
-              setState(() {
-                dropdownValue = newValue;
-              });
-              finalizados = false;
-              pendentes = false;
-              switch (newValue) {
-                case 'nome':
-                  setState(() {
-                    ordenarDropdown = 'name';
-                  });
-                  break;
-                case 'prioridade':
-                  setState(() {
-                    ordenarDropdown = 'priorityIndex';
-                  });
-                  break;
-                case 'data':
-                  setState(() {
-                    ordenarDropdown = 'date';
-                  });
-                  break;
-                case 'finalizados':
-                  setState(() {
-                    finalizados = true;
-                    ordenarDropdown = 'name';
-                  });
-                  break;
-                case 'pendentes':
-                  setState(() {
-                    pendentes = true;
-                    ordenarDropdown = 'name';
-                  });
-                  break;
-                default:
-              }
-            },
-          ),
-
-          //Seta que inverte a ordem da organização dos itens (ascending and descending)
-          IconButton(
-            onPressed: () {
-              setState(() {
-                ordenarSeta = !ordenarSeta;
-              });
-            },
-            icon: Icon(ordenarSeta ? Icons.arrow_upward : Icons.arrow_downward),
-          ),
-
           //Pesquisa
           SizedBox(
             width: 200,
@@ -175,66 +120,95 @@ class _ItemListPageState extends State<ItemListPage> {
           ? const Text('Usuário não logado')
           : StreamBuilder(
               stream: firestore
-                  .collection('items')
-                  .where('uid', isEqualTo: auth.currentUser!.uid)
+                  .collection('users')
+                  .doc(auth.currentUser!.uid)
+                  // .where('uid', isEqualTo: auth.currentUser!.uid)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const CircularProgressIndicator();
+                  return const Loading();
                 } else if (snapshot.hasError) {
                   return Text(
-                      'Erro ao obter dados das itens: ${snapshot.error}');
+                    'Erro ao obter dados das itens: ${snapshot.error}',
+                  );
                 } else if (auth.currentUser == null) {
                   return const Text('Usuário não logado');
-                } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                } else if (!snapshot.hasData ||
+                    !snapshot.data!.exists /*|| snapshot.data!.docs.isEmpty*/) {
                   return const Text('Não há itens a serem exibidas');
                 }
 
-                var tasks = snapshot.data!.docs;
+                // return const Text("Ok");
+                return StreamBuilder(
+                  stream: firestore
+                      .collection('users')
+                      .doc(auth.currentUser!.uid)
+                      .collection('items')
+                      .snapshots(),
+                  // stream: snapshot.data!.data()!['items'],
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Loading();
+                    } else if (snapshot.hasError) {
+                      return Text(
+                        'Erro ao obter dados dos itens: ${snapshot.error}',
+                      );
+                    }
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return const Text('Nenhum item encontrado.');
+                    }
 
-                var listaTasks = [];
-                for (var task in tasks) {
-                  listaTasks.add(task);
-                }
-
-                var listaAux = [];
-                if (finalizados || pendentes) {
-                  if (finalizados) {
-                    for (var task in listaTasks) {
-                      if (task.data()['finished'] == true) {
-                        listaAux.add(task);
+                    //Criando todos os documentos (exceto "collections"):
+                    for (var doc in snapshot.data!.docs) {
+                      // Se o ID do documento não for "collections", adiciona à lista
+                      if (doc.id != 'collections') {
+                        outrosDocumentos.add(doc);
                       }
                     }
-                  } else {
-                    for (var task in listaTasks) {
-                      if (task.data()['finished'] == false) {
-                        listaAux.add(task);
+
+                    // Verifica se o documento "collections" está presente
+                    if (snapshot.data!.docs
+                        .any((doc) => doc.id == 'collections')) {
+                      var collectionsDoc = snapshot.data!.docs
+                          .firstWhere((element) => element.id == 'collections');
+                      Map<String, dynamic> collectionsData =
+                          collectionsDoc.data();
+
+                      // Verifica se há o documento "collections" e se tem subcoleções
+                      if (collectionsData.isNotEmpty) {
+                        subCollectionsExist = true;
+                        subColecoes = collectionsData['places'].cast<String>();
                       }
                     }
-                  }
-                  listaTasks = listaAux;
-                }
 
-                listaTasks.sort(
-                    (a, b) => a[ordenarDropdown].compareTo(b[ordenarDropdown]));
-                if (ordenarSeta) {
-                  listaTasks = listaTasks.reversed.toList();
-                }
-
-                listaAux = [];
-                if (pesquisar.isNotEmpty) {
-                  for (var task in listaTasks) {
-                    if (task
-                        .data()['name']
-                        .toLowerCase()
-                        .contains(pesquisar.toLowerCase())) {
-                      listaAux.add(task);
-                    }
-                  }
-                  listaTasks = listaAux;
-                }
-
-                return MyListView(lista: listaTasks);
+                    return ListView(
+                      children: [
+                        if (subCollectionsExist)
+                          GridView.count(
+                            crossAxisCount: 4,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            children: [
+                              ...subColecoes
+                                  .map(
+                                    (e) => Container(
+                                      color: Colors.blue,
+                                      child: Center(
+                                        child: Text(e.toString()),
+                                      ),
+                                    ),
+                                  ).toList(),
+                            ],
+                          ),
+                        ...outrosDocumentos
+                            .map((e) => MyItems(document: e))
+                            .toList(),
+                      ],
+                    );
+                  },
+                );
               },
             ),
       floatingActionButton: FloatingActionButton(
