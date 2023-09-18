@@ -1,10 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:tg/views/item_create.dart';
 import 'package:tg/views/item_list.dart';
 import 'package:tg/views/user_login.dart';
-import 'package:tg/views/user_register.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 const firebaseConfig = FirebaseOptions(
@@ -27,17 +24,10 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: "MyInventory",
-      routes: {
-        '/item_list': (context) => const ItemListPage(),
-        '/item_create': (context) => const ItemCreatePage(),
-        '/user_login': (context) => const UserLoginPage(),
-        '/user_register': (context) => const UserRegisterPage(),
-      },
-      initialRoute: '/item_list',
-      // home: const LoginState(),
+      home: LoginState(),
     );
   }
 }
@@ -57,17 +47,3 @@ class LoginState extends StatelessWidget {
     );
   }
 }
-
-// class GetItemList{
-//   Future<List<String>> getPlaces() async {
-//     List<String> filtrar = ['all'];
-//     final CollectionReference places = FirebaseFirestore.instance.collection('places');
-//     QuerySnapshot queryPlaces = await places.get();
-//     DocumentSnapshot documentPlace = queryPlaces.docs.first;
-//     List<dynamic> arrayField = documentPlace['place'];
-//     for (var i in arrayField) {
-//       filtrar.add(i.toString());
-//     }
-//     return filtrar;
-//   }
-// }

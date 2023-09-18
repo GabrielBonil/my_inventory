@@ -2,6 +2,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:email_validator/email_validator.dart';
+import 'package:tg/views/user_register.dart';
 
 class UserLoginPage extends StatefulWidget {
   const UserLoginPage({super.key});
@@ -50,11 +51,9 @@ class _UserLoginPageState extends State<UserLoginPage> {
       formKey.currentState!.save();
 
       try {
-        await auth.signInWithEmailAndPassword(email: email, password: password);
-        // Navigator.of(context).popAndPushNamed('/item_list'); //Talvez tenha que mudar o tipo de troca depois
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          '/item_list',
-          ModalRoute.withName('/'),
+        await auth.signInWithEmailAndPassword(
+          email: email,
+          password: password,
         );
       } catch (e) {
         Fluttertoast.showToast(
@@ -132,8 +131,10 @@ class _UserLoginPageState extends State<UserLoginPage> {
               width: MediaQuery.of(context).size.width -
                   40, //width: double.infinity,
               child: ElevatedButton(
-                onPressed: () =>
-                    Navigator.of(context).popAndPushNamed('/user_register'),
+                onPressed: () => Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                      builder: (context) => const UserRegisterPage()),
+                ),
                 child: const Text("Registrar"),
               ),
             ),
