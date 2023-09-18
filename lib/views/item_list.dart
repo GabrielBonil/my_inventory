@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:tg/components/loading.dart';
 import 'package:tg/components/custom_stream_builder.dart';
 import 'package:tg/views/item_create.dart';
-import 'package:tg/views/user_login.dart';
 
 class ItemListPage extends StatefulWidget {
   // List<String> filtrar;
@@ -32,11 +31,36 @@ class _ItemListPageState extends State<ItemListPage> {
   late List<String> subColecoes;
   List<DocumentSnapshot> outrosDocumentos = [];
   late String caminho = 'users/${auth.currentUser!.uid}/items';
+  List<String> historicoNavegacao = [];
 
   void _updatePath(String novoCaminho) {
     setState(() {
+      historicoNavegacao.add(caminho);
       caminho = novoCaminho;
     });
+  }
+
+  void voltar() {
+    if (historicoNavegacao.isNotEmpty) {
+      setState(() {
+        caminho = historicoNavegacao.last;
+      });
+      // _updatePath(historicoNavegacao.last);
+      historicoNavegacao.removeLast();
+    } else {
+      print("Está vazio o histórico de caminhos");
+    }
+    // Divide o caminho em partes
+    // List<String> partesCaminho = caminho.split('/');
+    // Remove a última parte (se for uma subcoleção)
+    // if (partesCaminho.contains('collections')) {
+    //   partesCaminho.removeLast();
+    //   partesCaminho.removeLast();
+    //   String novoCaminho = partesCaminho.join('/');
+    //   _updatePath(novoCaminho);
+    // } else {
+    //   print("Não há subcoleções para voltar.");
+    // }
   }
 
   @override
@@ -53,6 +77,12 @@ class _ItemListPageState extends State<ItemListPage> {
         appBar: AppBar(
           title: const Text("Itens"),
           actions: [
+            ElevatedButton(
+              onPressed: () {
+                voltar();
+              },
+              child: const Text("Voltar"),
+            ),
             //Pesquisa
             SizedBox(
               width: 200,
@@ -98,6 +128,7 @@ class _ItemListPageState extends State<ItemListPage> {
         body: !logado
             ? const Loading()
             : CustomStreamBuilder(caminho: caminho, updatePath: _updatePath),
+
         // StreamBuilder(
         //     stream: firestore
         //         .collection('users')

@@ -42,6 +42,7 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
         }
 
         //Criando todos os documentos (exceto "collections"):
+        outrosDocumentos = [];
         for (var doc in snapshot.data!.docs) {
           // Se o ID do documento não for "collections", adiciona à lista
           if (doc.id != 'collections') {
@@ -82,7 +83,7 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
                             // print("Novo Caminho: $novoCaminho");
 
                             setState(() {
-                              outrosDocumentos.clear();
+                              // outrosDocumentos.clear();
                               subColecoes.clear();
                             });
 
