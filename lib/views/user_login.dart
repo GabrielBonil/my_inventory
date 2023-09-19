@@ -2,7 +2,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:email_validator/email_validator.dart';
-import 'package:tg/views/user_register.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserLoginPage extends StatefulWidget {
   const UserLoginPage({super.key});
@@ -13,10 +13,12 @@ class UserLoginPage extends StatefulWidget {
 
 class _UserLoginPageState extends State<UserLoginPage> {
   var mostrarSenha = false;
+  bool registrar = false;
   String email = '';
   String password = '';
 
   FirebaseAuth auth = FirebaseAuth.instance;
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   String? validarSenha(String? value) {
     if (value == null || value.isEmpty || value.length < 6) {
@@ -69,6 +71,35 @@ class _UserLoginPageState extends State<UserLoginPage> {
     }
   }
 
+  void register(BuildContext context) async {
+    if (formKey.currentState!.validate()) {
+      formKey.currentState!.save();
+
+      try {
+        await auth.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+        firestore
+            .collection('users')
+            .doc(auth.currentUser!.uid)
+            .collection('items')
+            .doc('collections')
+            .set({'places': []});
+      } catch (e) {
+        Fluttertoast.showToast(
+          msg: "Erro ao fazer registro: ${e.toString()}",
+          timeInSecForIosWeb: 5,
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -106,7 +137,8 @@ class _UserLoginPageState extends State<UserLoginPage> {
                 hintText: "Senha",
                 suffixIcon: IconButton(
                   icon: Icon(
-                      mostrarSenha ? Icons.visibility : Icons.visibility_off),
+                    mostrarSenha ? Icons.visibility : Icons.visibility_off,
+                  ),
                   onPressed: () {
                     setState(() {
                       mostrarSenha = !mostrarSenha;
@@ -118,26 +150,47 @@ class _UserLoginPageState extends State<UserLoginPage> {
               // autovalidateMode: AutovalidateMode.onUserInteraction,
             ),
 
-            //Botão Logar
-            SizedBox(
-              width: MediaQuery.of(context).size.width -
-                  40, //width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => logar(context),
-                child: const Text("Logar"),
-              ),
-            ),
-            SizedBox(
-              width: MediaQuery.of(context).size.width -
-                  40, //width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                      builder: (context) => const UserRegisterPage()),
-                ),
-                child: const Text("Registrar"),
-              ),
-            ),
+            !registrar
+                ?
+                //Botão Logar
+                SizedBox(
+                    width: MediaQuery.of(context).size.width -
+                        40, //width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => logar(context),
+                      child: const Text("Logar"),
+                    ),
+                  )
+                : //Botão Registrar
+                SizedBox(
+                    width: MediaQuery.of(context).size.width -
+                        40, //width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => register(context),
+                      child: const Text("Registrar"),
+                    ),
+                  ),
+            !registrar
+                ? SizedBox(
+                    width: MediaQuery.of(context).size.width -
+                        40, //width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => setState(() {
+                        registrar = !registrar;
+                      }),
+                      child: const Text("Registrar"),
+                    ),
+                  )
+                : SizedBox(
+                    width: MediaQuery.of(context).size.width -
+                        40, //width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => setState(() {
+                        registrar = !registrar;
+                      }),
+                      child: const Text("Logar"),
+                    ),
+                  ),
           ],
         ),
       ),

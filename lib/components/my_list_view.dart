@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class MyListView extends StatelessWidget {
-  FirebaseFirestore firestore = FirebaseFirestore.instance;
+  final List<dynamic> lista;
+  MyListView({super.key, required this.lista});
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   void update(String id, bool finished) {
     firestore.collection('items').doc(id).update({'finished': finished});
@@ -13,8 +15,6 @@ class MyListView extends StatelessWidget {
     firestore.collection('items').doc(id).delete();
   }
   
-  var lista = [];
-  MyListView({super.key, required this.lista});
 
   @override
   Widget build(BuildContext context) {
