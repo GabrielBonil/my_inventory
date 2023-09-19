@@ -196,7 +196,9 @@ class _ItemListPageState extends State<ItemListPage> {
               child: const Icon(Icons.add),
               label: 'Item',
               onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const ItemCreatePage()),
+                MaterialPageRoute(
+                  builder: (context) => ItemCreatePage(caminho: caminho),
+                ),
               ),
             ),
           ],

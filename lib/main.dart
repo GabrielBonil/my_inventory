@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:tg/views/item_list.dart';
 import 'package:tg/views/user_login.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:tg/components/loading.dart';
 
 const firebaseConfig = FirebaseOptions(
     apiKey: "AIzaSyBojilYeoEiydixh9BZDE6BOlVqY0IBrUA",
@@ -19,15 +20,30 @@ void main() async {
   runApp(const App());
 }
 
-class App extends StatelessWidget {
+class App extends StatefulWidget {
   const App({super.key});
 
   @override
+  State<App> createState() => _AppState();
+}
+
+class _AppState extends State<App> {
+  bool showSplash = true;
+
+  @override
+  void initState() {
+    super.initState();
+    setState(() {
+      showSplash = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: "MyInventory",
-      home: LoginState(),
+      home: showSplash ? const Loading() : const LoginState(),
     );
   }
 }
