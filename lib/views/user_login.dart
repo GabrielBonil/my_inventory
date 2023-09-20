@@ -104,7 +104,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Login"),
+        title: !registrar ? const Text("Login") : const Text("Registrar"),
       ),
       body: Form(
         key: formKey,

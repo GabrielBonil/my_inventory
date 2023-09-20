@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:tg/components/show_item_modal.dart';
 
 class MyItems extends StatelessWidget {
   final DocumentSnapshot<Object?> document;
@@ -15,17 +16,20 @@ class MyItems extends StatelessWidget {
         ),
         child: InkWell(
           borderRadius: const BorderRadius.all(Radius.circular(16)),
-          // onTap: () => showModalBottomSheet(
-          //   isScrollControlled: true,
-          //   context: context,
-          //   backgroundColor: Colors.transparent,
-          //   shape: const RoundedRectangleBorder(
-          //     borderRadius: BorderRadius.only(
-          //         topLeft: Radius.circular(16), topRight: Radius.circular(16)),
-          //   ),
-          //   builder: (context) => const SizedBox.shrink(),
-          //   // PricesModal(context: context, productId: history.id),
-          // ),
+          onTap: () => showModalBottomSheet(
+            isScrollControlled: true,
+            context: context,
+            backgroundColor: Colors.transparent,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+            ),
+            builder: (context) => ShowItemModal(
+              context: context,
+              document: document,
+            ),
+            // const SizedBox.shrink(),
+          ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Wrap(
