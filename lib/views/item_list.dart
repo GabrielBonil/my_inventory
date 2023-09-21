@@ -52,7 +52,7 @@ class _ItemListPageState extends State<ItemListPage> {
   }
 
   void onSubcollectionCreated(String subcollectionName) {
-    firestore.collection(caminho).doc('collections').get().then((doc) {
+    firestore.collection(caminho).doc(auth.currentUser!.uid).get().then((doc) {
       List<dynamic> places = [];
 
       if (doc.exists) {
@@ -63,16 +63,33 @@ class _ItemListPageState extends State<ItemListPage> {
         places.add(subcollectionName);
         firestore
             .collection(caminho)
-            .doc('collections')
+            .doc(auth.currentUser!.uid)
             .set({'places': places});
         firestore
             .collection(caminho)
-            .doc('collections')
+            .doc(auth.currentUser!.uid)
             .collection(subcollectionName)
-            .doc('collections')
+            .doc(auth.currentUser!.uid)
             .set({'places': []});
       }
     });
+  }
+
+  AlertDialog _buildExitDialog(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Please confirm'),
+      content: const Text('Do you want to exit the app?'),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('No'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text('Yes'),
+        ),
+      ],
+    );
   }
 
   @override
@@ -83,125 +100,139 @@ class _ItemListPageState extends State<ItemListPage> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text("Itens"),
-          leading: IconButton(
-            onPressed: voltar,
-            icon: const Icon(Icons.arrow_back_rounded),
+      child: WillPopScope(
+        onWillPop: () async {
+          if (historicoNavegacao.isNotEmpty) {
+            voltar();
+            return false;
+          } else {
+            bool? exitResult = await showDialog(
+              context: context,
+              builder: (context) => _buildExitDialog(context),
+            );
+            return exitResult ?? false;
+          }
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text("Itens"),
+            leading: IconButton(
+              onPressed: voltar,
+              icon: const Icon(Icons.arrow_back_rounded),
+            ),
+            actions: [
+              //Home
+              IconButton(
+                onPressed: home,
+                icon: const Icon(Icons.home_rounded),
+              ),
+              //Logout
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.person),
+                itemBuilder: (BuildContext context) {
+                  return ['Logout'].map((e) {
+                    return PopupMenuItem<String>(
+                      value: e,
+                      child: Text(e),
+                    );
+                  }).toList();
+                },
+                onSelected: (String value) {
+                  switch (value) {
+                    case 'Logout':
+                      setState(() {
+                        auth.signOut();
+                      });
+                      break;
+                    default:
+                  }
+                },
+              ),
+            ],
           ),
-          actions: [
-            //Home
-            IconButton(
-              onPressed: home,
-              icon: const Icon(Icons.home_rounded),
-            ),
-            //Logout
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.person),
-              itemBuilder: (BuildContext context) {
-                return ['Logout'].map((e) {
-                  return PopupMenuItem<String>(
-                    value: e,
-                    child: Text(e),
-                  );
-                }).toList();
-              },
-              onSelected: (String value) {
-                switch (value) {
-                  case 'Logout':
-                    setState(() {
-                      auth.signOut();
-                    });
-                    break;
-                  default:
-                }
-              },
-            ),
-          ],
-        ),
-        body: CustomStreamBuilder(
-          caminho: caminho,
-          updatePath: _updatePath,
-        ),
-        floatingActionButton: SpeedDial(
-          backgroundColor: Colors.black,
-          overlayColor: Colors.black,
-          overlayOpacity: 0.4,
-          spacing: 12,
-          spaceBetweenChildren: 12,
-          // icon: Icons.add,
-          animatedIcon: AnimatedIcons.menu_close,
-          children: [
-            SpeedDialChild(
-              child: const Icon(Icons.folder),
-              label: 'Pasta',
-              onTap: () => {
-                showGeneralDialog(
-                  context: context,
-                  pageBuilder: (ctx, a1, a2) {
-                    return Container();
-                  },
-                  transitionBuilder: (ctx, a1, a2, child) {
-                    var curve = Curves.easeInOut.transform(a1.value);
-                    return Transform.scale(
-                      scale: curve,
-                      child: AlertDialog(
-                        title: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text("Criar Pasta"),
-                            IconButton(
+          body: CustomStreamBuilder(
+            caminho: caminho,
+            updatePath: _updatePath,
+          ),
+          floatingActionButton: SpeedDial(
+            backgroundColor: Colors.black,
+            overlayColor: Colors.black,
+            overlayOpacity: 0.4,
+            spacing: 12,
+            spaceBetweenChildren: 12,
+            // icon: Icons.add,
+            animatedIcon: AnimatedIcons.menu_close,
+            children: [
+              SpeedDialChild(
+                child: const Icon(Icons.folder),
+                label: 'Pasta',
+                onTap: () => {
+                  showGeneralDialog(
+                    context: context,
+                    pageBuilder: (ctx, a1, a2) {
+                      return Container();
+                    },
+                    transitionBuilder: (ctx, a1, a2, child) {
+                      var curve = Curves.easeInOut.transform(a1.value);
+                      return Transform.scale(
+                        scale: curve,
+                        child: AlertDialog(
+                          title: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text("Criar Pasta"),
+                              IconButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                icon: const Icon(Icons.close),
+                              ),
+                            ],
+                          ),
+                          content: TextField(
+                            controller: _subcollectionNameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Nome da Pasta',
+                            ),
+                          ),
+                          actions: <Widget>[
+                            TextButton(
                               onPressed: () {
-                                Navigator.of(context).pop();
+                                String subcollectionName =
+                                    _subcollectionNameController.text;
+                                if (subcollectionName.isNotEmpty) {
+                                  Navigator.pop(context);
+                                  onSubcollectionCreated(subcollectionName);
+                                }
+                                _subcollectionNameController.clear();
                               },
-                              icon: const Icon(Icons.close),
+                              child: const Text(
+                                "Criar",
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 17,
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                        content: TextField(
-                          controller: _subcollectionNameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Nome da Pasta',
-                          ),
-                        ),
-                        actions: <Widget>[
-                          TextButton(
-                            onPressed: () {
-                              String subcollectionName =
-                                  _subcollectionNameController.text;
-                              if (subcollectionName.isNotEmpty) {
-                                Navigator.pop(context);
-                                onSubcollectionCreated(subcollectionName);
-                              }
-                              _subcollectionNameController.clear();
-                            },
-                            child: const Text(
-                              "Criar",
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 17,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                  transitionDuration: const Duration(milliseconds: 300),
-                )
-              },
-            ),
-            SpeedDialChild(
-              child: const Icon(Icons.add),
-              label: 'Item',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => ItemCreatePage(caminho: caminho),
+                      );
+                    },
+                    transitionDuration: const Duration(milliseconds: 300),
+                  )
+                },
+              ),
+              SpeedDialChild(
+                child: const Icon(Icons.add),
+                label: 'Item',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => ItemCreatePage(caminho: caminho),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

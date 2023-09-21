@@ -84,7 +84,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
             .collection('users')
             .doc(auth.currentUser!.uid)
             .collection('items')
-            .doc('collections')
+            .doc(auth.currentUser!.uid)
             .set({'places': []});
       } catch (e) {
         Fluttertoast.showToast(

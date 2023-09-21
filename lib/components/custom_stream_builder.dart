@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tg/components/loading.dart';
 import 'package:tg/components/my_items.dart';
 
@@ -18,6 +19,7 @@ class CustomStreamBuilder extends StatefulWidget {
 
 class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
+  FirebaseAuth auth = FirebaseAuth.instance;
   bool subCollectionsExist = false;
   List<String> subColecoes = [];
   List<DocumentSnapshot> outrosDocumentos = [];
@@ -41,22 +43,22 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
           return const Text('Nenhum item encontrado.');
         }
 
-        //Criando todos os documentos (exceto "collections"):
+        //Criando todos os documentos (exceto auth.currentUser!.uid):
         outrosDocumentos = [];
         for (var doc in snapshot.data!.docs) {
-          // Se o ID do documento não for "collections", adiciona à lista
-          if (doc.id != 'collections') {
+          // Se o ID do documento não for auth.currentUser!.uid, adiciona à lista
+          if (doc.id != auth.currentUser!.uid) {
             outrosDocumentos.add(doc);
           }
         }
 
-        // Verifica se o documento "collections" está presente
-        if (snapshot.data!.docs.any((doc) => doc.id == 'collections')) {
+        // Verifica se o documento auth.currentUser!.uid está presente
+        if (snapshot.data!.docs.any((doc) => doc.id == auth.currentUser!.uid)) {
           var collectionsDoc = snapshot.data!.docs
-              .firstWhere((element) => element.id == 'collections');
+              .firstWhere((element) => element.id == auth.currentUser!.uid);
           Map<String, dynamic> collectionsData = collectionsDoc.data();
 
-          // Verifica se há o documento "collections" e se tem subcoleções
+          // Verifica se há o documento auth.currentUser!.uid e se tem subcoleções
           if (collectionsData.isNotEmpty) {
             subCollectionsExist = true;
             subColecoes = collectionsData['places'].cast<String>();
@@ -79,7 +81,7 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
                           onTap: () {
                             // print("Caminho: ${widget.caminho}");
                             String novoCaminho =
-                                '${widget.caminho.toString()}/collections/$e';
+                                '${widget.caminho.toString()}/${auth.currentUser!.uid}/$e';
                             // print("Novo Caminho: $novoCaminho");
 
                             setState(() {
