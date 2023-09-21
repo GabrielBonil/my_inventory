@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 class ItemCreatePage extends StatefulWidget {
   final String caminho;
@@ -19,7 +21,6 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
   final TextEditingController novoCampoController = TextEditingController();
   late String? selectedType;
 
-  //InitState para selecionar a data de hoje/agora e deixar pré-fixado a prioridade baixa.
   @override
   void initState() {
     super.initState();
@@ -35,6 +36,9 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
       if (tipo == 'int') {
         valueList.add(0);
       }
+      if (tipo == 'data'){
+        valueList.add(DateTime.now());
+      }
     });
   }
 
@@ -46,10 +50,8 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
       Map<String, dynamic> data = {};
 
       for (int i = 0; i < fieldList.length; i++) {
-        data[fieldList[i]] =
-            valueList[i]; // Cria um campo 'item_0', 'item_1', etc.
+        data[fieldList[i]] = valueList[i]; 
       }
-
       firestore.collection(widget.caminho).add(data);
 
       Navigator.of(context).pop();
@@ -62,6 +64,24 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
     }
 
     return null;
+  }
+
+  Future<void> selecionarData(BuildContext context, int index, TextEditingController dataController) async {
+    final DateTime? novaData = await showDatePicker(
+      context: context,
+      initialDate: valueList[index],
+      firstDate: DateTime(2023),
+      lastDate: DateTime(2100),
+      helpText: 'Selecione a data',
+      cancelText: 'Cancelar',
+      confirmText: 'Confirmar',
+    );
+    if (novaData != null && novaData != valueList[index]) {
+      setState(() {
+        valueList[index] = novaData;
+        dataController.text = DateFormat('dd/MM/yyyy').format(valueList[index]);
+      });
+    }
   }
 
   @override
@@ -97,14 +117,42 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
                         return TextFormField(
                           autovalidateMode: AutovalidateMode.onUserInteraction,
                           keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
                           // maxLines: 1,
                           // maxLength: 30,
                           decoration: InputDecoration(
                             labelText: fieldList[index],
                             hintText: fieldList[index],
                           ),
-                          onSaved: (newValue) =>
-                              valueList[index] = int.parse(newValue!),
+                          onSaved: (newValue) => valueList[index] = int.parse(newValue!),
+                          validator: validarItem,
+                        );
+                      }
+
+                      if (typeList[index] == 'data') {
+                        late TextEditingController dataController = TextEditingController(text: DateFormat('dd/MM/yyyy').format(valueList[index]));
+
+                        return TextFormField(
+                          // readOnly: true,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          keyboardType: TextInputType.datetime,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp(r'^[0-9\/]*$')),
+                            LengthLimitingTextInputFormatter(10),
+                          ],
+                          controller: dataController,
+                          decoration: InputDecoration(
+                            labelText: 'Data',
+                            suffixIcon: InkWell(
+                              onTap: () {
+                                selecionarData(context, index, dataController);
+                              },
+                              child: const Icon(Icons.calendar_today),
+                            ),
+                          ),
+                          onSaved: (newValue) => valueList[index] = DateFormat('dd/MM/yyyy').parse(newValue!),
                           validator: validarItem,
                         );
                       }
@@ -152,7 +200,7 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
                                     ),
                                     DropdownButtonFormField<String>(
                                       value: selectedType,
-                                      items: ['String', 'int'].map((e) {
+                                      items: ['String', 'int', 'data'].map((e) {
                                         return DropdownMenuItem<String>(
                                           value: e,
                                           child: Text(e),

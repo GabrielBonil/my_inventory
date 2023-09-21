@@ -22,6 +22,7 @@ class _ItemListPageState extends State<ItemListPage> {
   late List<String> subColecoes;
   List<DocumentSnapshot> outrosDocumentos = [];
   late String caminho = 'users/${auth.currentUser!.uid}/items';
+  String tituloPagina = 'items';
   List<String> historicoNavegacao = [];
   final TextEditingController _subcollectionNameController =
       TextEditingController();
@@ -31,6 +32,7 @@ class _ItemListPageState extends State<ItemListPage> {
       historicoNavegacao.add(caminho);
       caminho = novoCaminho;
     });
+    updateTitle(caminho);
   }
 
   void voltar() {
@@ -39,6 +41,7 @@ class _ItemListPageState extends State<ItemListPage> {
         caminho = historicoNavegacao.last;
       });
       historicoNavegacao.removeLast();
+      updateTitle(caminho);
     }
   }
 
@@ -48,7 +51,15 @@ class _ItemListPageState extends State<ItemListPage> {
         caminho = 'users/${auth.currentUser!.uid}/items';
       });
       historicoNavegacao.clear();
+      updateTitle(caminho);
     }
+  }
+
+  void updateTitle(String caminho){
+    var newTitle = caminho.split('/');
+    setState((){
+      tituloPagina = newTitle.last;
+    });
   }
 
   void onSubcollectionCreated(String subcollectionName) {
@@ -95,6 +106,7 @@ class _ItemListPageState extends State<ItemListPage> {
   @override
   void initState() {
     super.initState();
+    updateTitle(caminho);
   }
 
   @override
@@ -115,7 +127,7 @@ class _ItemListPageState extends State<ItemListPage> {
         },
         child: Scaffold(
           appBar: AppBar(
-            title: const Text("Itens"),
+            title: Text(tituloPagina),
             leading: IconButton(
               onPressed: voltar,
               icon: const Icon(Icons.arrow_back_rounded),
