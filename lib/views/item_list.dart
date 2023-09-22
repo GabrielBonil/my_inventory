@@ -24,6 +24,7 @@ class _ItemListPageState extends State<ItemListPage> {
   late String caminho = 'users/${auth.currentUser!.uid}/items';
   String tituloPagina = 'items';
   List<String> historicoNavegacao = [];
+  bool returnable = false;
   final TextEditingController _subcollectionNameController =
       TextEditingController();
 
@@ -55,10 +56,15 @@ class _ItemListPageState extends State<ItemListPage> {
     }
   }
 
-  void updateTitle(String caminho){
+  void updateTitle(String caminho) {
     var newTitle = caminho.split('/');
-    setState((){
+    setState(() {
       tituloPagina = newTitle.last;
+      if (historicoNavegacao.isNotEmpty) {
+        returnable = true;
+      } else {
+        returnable = false;
+      }
     });
   }
 
@@ -128,13 +134,15 @@ class _ItemListPageState extends State<ItemListPage> {
         child: Scaffold(
           appBar: AppBar(
             title: Text(tituloPagina),
-            leading: IconButton(
-              onPressed: voltar,
-              icon: const Icon(Icons.arrow_back_rounded),
-            ),
+            leading: !returnable
+                ? null
+                : IconButton(
+                    onPressed: voltar,
+                    icon: const Icon(Icons.arrow_back_rounded),
+                  ),
             actions: [
               //Home
-              IconButton(
+              if (returnable) IconButton(
                 onPressed: home,
                 icon: const Icon(Icons.home_rounded),
               ),

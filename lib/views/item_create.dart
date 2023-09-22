@@ -43,7 +43,7 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
       if (tipo == 'Calendário') {
         valueList.add(DateTime.now());
       }
-      if (tipo == 'Reais') {
+      if (tipo == 'Dinheiro') {
         valueList.add('');
       }
     });
@@ -196,7 +196,7 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
                           );
                         }
 
-                        if (typeList[index] == 'Reais'){
+                        if (typeList[index] == 'Dinheiro'){
                           var moneyController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', leftSymbol: 'R\$', precision: 2);
                           return TextFormField(
                             autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -259,7 +259,7 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
                                       ),
                                       DropdownButtonFormField<String>(
                                         value: selectedType,
-                                        items: ['Descrição', 'Número Inteiro', 'Número Decimal', 'Reais', 'Calendário'].map((e) {
+                                        items: ['Descrição', 'Número Inteiro', 'Número Decimal', 'Dinheiro', 'Calendário'].map((e) {
                                           return DropdownMenuItem<String>(
                                             value: e,
                                             child: Text(e),

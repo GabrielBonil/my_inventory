@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:tg/components/loading.dart';
 import 'package:intl/intl.dart';
 
 class ShowItemModal extends StatelessWidget {
@@ -71,7 +70,7 @@ class ShowItemModal extends StatelessWidget {
                             ...data.entries.map((entry) {
                               String campo = entry.key;
                               dynamic valor = entry.value;
-                    
+
                               return ListTile(
                                 title: Text('Campo: $campo'),
                                 subtitle: Text(
@@ -79,6 +78,17 @@ class ShowItemModal extends StatelessWidget {
                               );
                             }).toList(),
                         ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width -
+                            40, //width: double.infinity,
+                        child: const ElevatedButton(
+                          onPressed: null,
+                          child: Text("Salvar"),
+                        ),
                       ),
                     ),
                   ],

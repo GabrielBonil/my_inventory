@@ -115,6 +115,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
               maxLength: 50,
               decoration: const InputDecoration(
                 // icon: Icon(Icons.people_alt_rounded),
+                labelText: "E-mail",
                 hintText: "E-mail",
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.black),
@@ -134,6 +135,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
                 enabledBorder: const UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.black),
                 ),
+                labelText: "Senha",
                 hintText: "Senha",
                 suffixIcon: IconButton(
                   icon: Icon(
