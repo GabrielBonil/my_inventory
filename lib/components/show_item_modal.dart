@@ -43,37 +43,44 @@ class ShowItemModal extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: Column(
                   children: [
-                    // Padding(
-                    //   padding: const EdgeInsets.only(top: 4, bottom: 8),
-                    //   child: Center(
-                    //     child: Container(
-                    //       decoration: BoxDecoration(
-                    //         color: Theme.of(context).colorScheme.primary,
-                    //         borderRadius: BorderRadius.circular(50),
-                    //       ),
-                    //       padding: const EdgeInsets.symmetric(
-                    //           horizontal: 12, vertical: 4),
-                    //       child: Text(
-                    //         document["nome"],
-                    //         style: const TextStyle(
-                    //           fontWeight: FontWeight.bold,
-                    //           color: Colors.white,
-                    //         ),
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
-                    if (data != null)
-                      ...data.entries.map((entry) {
-                        String campo = entry.key;
-                        dynamic valor = entry.value;
-
-                        return ListTile(
-                          title: Text('Campo: $campo'),
-                          subtitle:
-                              Text('Valor: $valor, Tipo: ${valor.runtimeType}'),
-                        );
-                      }).toList(),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4, bottom: 8),
+                      child: Center(
+                        child: Container(
+                          // decoration: BoxDecoration(
+                          //   color: Theme.of(context).colorScheme.primary,
+                          //   borderRadius: BorderRadius.circular(50),
+                          // ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 4),
+                          child: Text(
+                            document["nome"],
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView(
+                        shrinkWrap: true,
+                        children: [
+                          if (data != null)
+                            ...data.entries.map((entry) {
+                              String campo = entry.key;
+                              dynamic valor = entry.value;
+                    
+                              return ListTile(
+                                title: Text('Campo: $campo'),
+                                subtitle: Text(
+                                    'Valor: $valor, Tipo: ${valor.runtimeType}'),
+                              );
+                            }).toList(),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
                 // FutureBuilder(
