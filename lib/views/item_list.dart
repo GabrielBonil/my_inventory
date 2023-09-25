@@ -21,8 +21,8 @@ class _ItemListPageState extends State<ItemListPage> {
   bool subCollectionsExist = false;
   late List<String> subColecoes;
   List<DocumentSnapshot> outrosDocumentos = [];
-  late String caminho = 'users/${auth.currentUser!.uid}/items';
-  String tituloPagina = 'items';
+  late String caminho = 'users/${auth.currentUser!.uid}/MyInventory';
+  String tituloPagina = 'MyInventory';
   List<String> historicoNavegacao = [];
   bool returnable = false;
   final TextEditingController _subcollectionNameController =
@@ -49,7 +49,7 @@ class _ItemListPageState extends State<ItemListPage> {
   void home() {
     if (historicoNavegacao.isNotEmpty) {
       setState(() {
-        caminho = 'users/${auth.currentUser!.uid}/items';
+        caminho = 'users/${auth.currentUser!.uid}/MyInventory';
       });
       historicoNavegacao.clear();
       updateTitle(caminho);

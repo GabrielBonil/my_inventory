@@ -53,7 +53,7 @@ class ShowItemModal extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 4),
                           child: Text(
-                            document["nome"],
+                            document["Nome"],
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.black,

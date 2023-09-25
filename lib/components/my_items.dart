@@ -42,7 +42,7 @@ class MyItems extends StatelessWidget {
                   direction: Axis.vertical,
                   children: [
                     Text(
-                      document['nome'], //.toCamelCase()
+                      document['Nome'], //.toCamelCase()
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     // Text(

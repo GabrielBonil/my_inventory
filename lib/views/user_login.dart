@@ -80,12 +80,26 @@ class _UserLoginPageState extends State<UserLoginPage> {
           email: email,
           password: password,
         );
-        firestore
+
+        String usuario = auth.currentUser!.uid;
+        // Lógica de pastas:
+        await firestore
             .collection('users')
-            .doc(auth.currentUser!.uid)
-            .collection('items')
-            .doc(auth.currentUser!.uid)
+            .doc(usuario)
+            .collection('MyInventory')
+            .doc(usuario)
             .set({'places': []});
+
+        //Lógica dos modelos:
+        Map<String, dynamic> modeloPadrao = {
+          "Padrão": {"Nome": "Descrição"},
+          "Nome e Quantidade": {"Nome": "Descrição", "Quantidade": "Número Inteiro"},
+        };
+
+        await firestore
+            .collection('users')
+            .doc(usuario)
+            .set(modeloPadrao);
       } catch (e) {
         Fluttertoast.showToast(
           msg: "Erro ao fazer registro: ${e.toString()}",

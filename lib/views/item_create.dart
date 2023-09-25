@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_masked_text2/flutter_masked_text2.dart';
+import 'package:tg/components/field_model_builder.dart';
 
 class ItemCreatePage extends StatefulWidget {
   final String caminho;
@@ -16,16 +16,15 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
   var formKey = GlobalKey<FormState>();
 
   FirebaseFirestore firestore = FirebaseFirestore.instance;
-  List<String> fieldList = ["nome"];
+  FirebaseAuth auth = FirebaseAuth.instance;
+  
+  List<String> fieldList = ["Nome"];
   List<String> typeList = ["Descrição"];
   List valueList = [""];
   final TextEditingController novoCampoController = TextEditingController();
   late String? selectedType;
-
-  @override
-  void initState() {
-    super.initState();
-  }
+  List<String> listaModelos = [];
+  String? modeloSelecionado = "Padrão";
 
   void onNovoCampoCreated(String nome, var tipo) {
     setState(() {
@@ -44,7 +43,7 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
         valueList.add(DateTime.now());
       }
       if (tipo == 'Dinheiro') {
-        valueList.add('');
+        valueList.add('0,00');
       }
     });
   }
@@ -92,12 +91,120 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
     }
   }
 
+  void getModelos() async{
+    var documento = await firestore.collection('users').doc(auth.currentUser!.uid).get();
+    documento.data()!.forEach((key, value) {
+      setState(() {
+        listaModelos.add(key);
+      });
+    });
+    setState(() {
+      listaModelos.add("Criar Modelo");
+    });
+  }
+
+  void handleSelect(String? modelo) async{
+    if (modelo != "Criar Modelo"){
+      setState(() {
+        fieldList.clear();
+        typeList.clear();
+        valueList.clear();
+      });
+      var documento = await firestore.collection('users').doc(auth.currentUser!.uid).get();
+      Map<String, dynamic>? mapaSelecionado = documento.data()?[modelo];
+      mapaSelecionado!.forEach((key, value) {
+        // print("Key: $key | Value: $value");
+        onNovoCampoCreated(key, value);
+      });
+    } else {
+      // showGeneralDialog(
+      //   context: context,
+      //   pageBuilder: (ctx, a1, a2) {
+      //     return Container();
+      //   },
+      //   transitionBuilder: (ctx, a1, a2, child) {
+      //     var curve = Curves.easeInOut.transform(a1.value);
+      //     return Transform.scale(
+      //       scale: curve,
+      //       child: AlertDialog(
+      //         title: Row(
+      //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      //           children: [
+      //             const Text("Criar Pasta"),
+      //             IconButton(
+      //               onPressed: () {
+      //                 Navigator.of(context).pop();
+      //               },
+      //               icon: const Icon(Icons.close),
+      //             ),
+      //           ],
+      //         ),
+      //         content: TextField(
+      //           controller: _subcollectionNameController,
+      //           decoration: const InputDecoration(
+      //             labelText: 'Nome da Pasta',
+      //           ),
+      //         ),
+      //         actions: <Widget>[
+      //           TextButton(
+      //             onPressed: () {
+      //               String subcollectionName =
+      //                   _subcollectionNameController.text;
+      //               if (subcollectionName.isNotEmpty) {
+      //                 Navigator.pop(context);
+      //                 onSubcollectionCreated(subcollectionName);
+      //               }
+      //               _subcollectionNameController.clear();
+      //             },
+      //             child: const Text(
+      //               "Criar",
+      //               style: TextStyle(
+      //                 color: Colors.red,
+      //                 fontSize: 17,
+      //               ),
+      //             ),
+      //           ),
+      //         ],
+      //       ),
+      //     );
+      //   },
+      //   transitionDuration: const Duration(milliseconds: 300),
+      // );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getModelos();
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
           title: const Text("Novo Item"),
+          actions: [
+            DropdownButton<String>(
+              underline: const SizedBox.shrink(),
+              focusNode: FocusNode(canRequestFocus: false),
+              value: modeloSelecionado,
+              // style: const TextStyle(color: Colors.white),
+              items: listaModelos.map((e) {
+                return DropdownMenuItem<String>(
+                  value: e,
+                  child: Text(e),
+                );
+              }).toList(),
+              onChanged: (newValue) {
+                setState(() {
+                  modeloSelecionado = newValue;
+                  handleSelect(newValue);
+                });
+              },
+            ),
+          ],
         ),
         body: Form(
           key: formKey,
@@ -108,116 +215,13 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
                 child: ListView(
                   shrinkWrap: true,
                   children: [
-                    ...List.generate(
-                      fieldList.length,
-                      (index) {
-                        if (typeList[index] == 'Descrição') {
-                          return TextFormField(
-                            autovalidateMode: AutovalidateMode.onUserInteraction,
-                            // maxLines: 1,
-                            // maxLength: 30,
-                            decoration: InputDecoration(
-                              labelText: fieldList[index],
-                              hintText: fieldList[index],
-                            ),
-                            onSaved: (newValue) => valueList[index] = newValue!,
-                            validator: validarItem,
-                          );
-                        }
-                        if (typeList[index] == 'Número Inteiro') {
-                          return TextFormField(
-                            autovalidateMode: AutovalidateMode.onUserInteraction,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            // maxLines: 1,
-                            // maxLength: 30,
-                            decoration: InputDecoration(
-                              labelText: fieldList[index],
-                              hintText: fieldList[index],
-                            ),
-                            onSaved: (newValue) =>
-                                valueList[index] = int.parse(newValue!),
-                            validator: validarItem,
-                          );
-                        }
-
-                        if (typeList[index] == 'Número Decimal') {
-                          return TextFormField(
-                            autovalidateMode: AutovalidateMode.onUserInteraction,
-                            // keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(RegExp(r'^\d+\,?\d{0,2}')),
-                            ],
-                            // maxLines: 1,
-                            // maxLength: 30,
-                            decoration: InputDecoration(
-                              labelText: fieldList[index],
-                              hintText: fieldList[index],
-                            ),
-                            onSaved: (newValue) =>
-                                valueList[index] = double.parse(newValue!.replaceAll(',', '.')),
-                            validator: validarItem,
-                          );
-                        }
-              
-                        if (typeList[index] == 'Calendário') {
-                          late TextEditingController dataController =
-                              TextEditingController(
-                                  text: DateFormat('dd/MM/yyyy')
-                                      .format(valueList[index]));
-              
-                          return TextFormField(
-                            readOnly: true,
-                            autovalidateMode: AutovalidateMode.onUserInteraction,
-                            // keyboardType: TextInputType.datetime,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                  RegExp(r'^[0-9\/]*$')),
-                              LengthLimitingTextInputFormatter(10),
-                            ],
-                            controller: dataController,
-                            decoration: InputDecoration(
-                              labelText: 'Data',
-                              suffixIcon: InkWell(
-                                onTap: () {
-                                  selecionarData(context, index, dataController);
-                                },
-                                child: const Icon(Icons.calendar_today),
-                              ),
-                            ),
-                            onTap: () {
-                              selecionarData(context, index, dataController);
-                            },
-                            onSaved: (newValue) => valueList[index] =
-                                DateFormat('dd/MM/yyyy').parse(newValue!),
-                            validator: validarItem,
-                          );
-                        }
-
-                        if (typeList[index] == 'Dinheiro'){
-                          var moneyController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', leftSymbol: 'R\$', precision: 2);
-                          return TextFormField(
-                            autovalidateMode: AutovalidateMode.onUserInteraction,
-                            keyboardType: TextInputType.number,
-                            controller: moneyController,
-                            // maxLines: 1,
-                            // maxLength: 30,
-                            decoration: InputDecoration(
-                              labelText: fieldList[index],
-                              hintText: fieldList[index],
-                            ),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            onSaved: (newValue) => valueList[index] = newValue!,
-                            validator: validarItem,
-                          );
-                        }
-              
-                        return const SizedBox();
-                      },
+                    FieldModelBuilder(
+                      context: context,
+                      fieldList: fieldList,
+                      typeList: typeList,
+                      valueList: valueList,
+                      validarItem: validarItem,
+                      selecionarData: selecionarData,
                     ),
                     SizedBox(
                       width: MediaQuery.of(context).size.width -

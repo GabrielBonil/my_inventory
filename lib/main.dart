@@ -4,6 +4,7 @@ import 'package:tg/views/item_list.dart';
 import 'package:tg/views/user_login.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tg/components/loading.dart';
+import 'package:flutter/services.dart';
 
 const firebaseConfig = FirebaseOptions(
     apiKey: "AIzaSyBojilYeoEiydixh9BZDE6BOlVqY0IBrUA",
@@ -16,6 +17,9 @@ const firebaseConfig = FirebaseOptions(
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: firebaseConfig);
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
 
   runApp(const App());
 }
@@ -55,11 +59,22 @@ class LoginState extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder(
       stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) => snapshot.hasError ||
-              snapshot.connectionState == ConnectionState.active &&
-                  !snapshot.hasData
-          ? const UserLoginPage()
-          : const ItemListPage(),
+      // builder: (context, snapshot) => snapshot.hasError ||
+      //         snapshot.connectionState == ConnectionState.active &&
+      //             !snapshot.hasData
+      //     ? const UserLoginPage()
+      //     : const ItemListPage(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.active) {
+          if (snapshot.hasError || !snapshot.hasData) {
+            return const UserLoginPage();
+          } else {
+            return const ItemListPage();
+          }
+        } else {
+          return const Loading();
+        }
+      },
     );
   }
 }
