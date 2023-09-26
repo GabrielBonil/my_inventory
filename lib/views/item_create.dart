@@ -18,9 +18,9 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
   
-  List<String> fieldList = ["Nome"];
-  List<String> typeList = ["Descrição"];
-  List valueList = [""];
+  List<String> fieldList = [];
+  List<String> typeList = [];
+  List valueList = [];
   final TextEditingController novoCampoController = TextEditingController();
   late String? selectedType;
   List<String> listaModelos = [];
@@ -92,6 +92,7 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
   }
 
   void getModelos() async{
+    listaModelos.clear();
     var documento = await firestore.collection('users').doc(auth.currentUser!.uid).get();
     documento.data()!.forEach((key, value) {
       setState(() {
@@ -117,59 +118,68 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
         onNovoCampoCreated(key, value);
       });
     } else {
-      // showGeneralDialog(
-      //   context: context,
-      //   pageBuilder: (ctx, a1, a2) {
-      //     return Container();
-      //   },
-      //   transitionBuilder: (ctx, a1, a2, child) {
-      //     var curve = Curves.easeInOut.transform(a1.value);
-      //     return Transform.scale(
-      //       scale: curve,
-      //       child: AlertDialog(
-      //         title: Row(
-      //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      //           children: [
-      //             const Text("Criar Pasta"),
-      //             IconButton(
-      //               onPressed: () {
-      //                 Navigator.of(context).pop();
-      //               },
-      //               icon: const Icon(Icons.close),
-      //             ),
-      //           ],
-      //         ),
-      //         content: TextField(
-      //           controller: _subcollectionNameController,
-      //           decoration: const InputDecoration(
-      //             labelText: 'Nome da Pasta',
-      //           ),
-      //         ),
-      //         actions: <Widget>[
-      //           TextButton(
-      //             onPressed: () {
-      //               String subcollectionName =
-      //                   _subcollectionNameController.text;
-      //               if (subcollectionName.isNotEmpty) {
-      //                 Navigator.pop(context);
-      //                 onSubcollectionCreated(subcollectionName);
-      //               }
-      //               _subcollectionNameController.clear();
-      //             },
-      //             child: const Text(
-      //               "Criar",
-      //               style: TextStyle(
-      //                 color: Colors.red,
-      //                 fontSize: 17,
-      //               ),
-      //             ),
-      //           ),
-      //         ],
-      //       ),
-      //     );
-      //   },
-      //   transitionDuration: const Duration(milliseconds: 300),
-      // );
+      String nomeModelo = '';
+      showGeneralDialog(
+        context: context,
+        pageBuilder: (ctx, a1, a2) {
+          return Container();
+        },
+        transitionBuilder: (ctx, a1, a2, child) {
+          var curve = Curves.easeInOut.transform(a1.value);
+          return Transform.scale(
+            scale: curve,
+            child: AlertDialog(
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Criar Modelo"),
+                  IconButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              content: TextField(
+                // controller: _subcollectionNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nome do Modelo',
+                  hintText: 'Nome do Modelo',
+                ),
+                onChanged: (value) => nomeModelo = value,
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () async {
+                    Map<String, dynamic> novoMapa = {};
+                    for (int i = 0; i < fieldList.length; i++) {
+                      novoMapa[fieldList[i]] = typeList[i];
+                    }
+
+                    await firestore
+                        .collection('users')
+                        .doc(auth.currentUser!.uid)
+                        .update({nomeModelo: novoMapa});
+
+                    getModelos();
+                    modeloSelecionado = nomeModelo;
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    "Criar",
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontSize: 17,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+      );
     }
   }
 
@@ -177,6 +187,7 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
   void initState() {
     super.initState();
     getModelos();
+    handleSelect("Padrão");
   }
 
   @override

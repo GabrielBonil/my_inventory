@@ -87,7 +87,7 @@ class FieldModelBuilder extends StatelessWidget {
         ],
         controller: dataController,
         decoration: InputDecoration(
-          labelText: 'Data',
+          labelText: labelText,
           suffixIcon: InkWell(
             onTap: () {
               selecionarData(context, index, dataController);
