@@ -4,7 +4,8 @@ import 'package:tg/components/show_item_modal.dart';
 
 class MyItems extends StatelessWidget {
   final DocumentSnapshot<Object?> document;
-  const MyItems({super.key, required this.document});
+  final String caminho;
+  const MyItems({super.key, required this.document, required this.caminho});
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +28,7 @@ class MyItems extends StatelessWidget {
             builder: (context) => ShowItemModal(
               context: context,
               document: document,
+              caminho: caminho,
             ),
             // const SizedBox.shrink(),
           ),

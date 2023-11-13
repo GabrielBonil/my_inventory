@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:tg/components/custom_stream_builder.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:tg/views/item_create.dart';
+import 'package:uuid/uuid.dart';
 // import 'package:tg/components/loading.dart';
 // import 'package:fluttertoast/fluttertoast.dart';
 
@@ -70,14 +71,21 @@ class _ItemListPageState extends State<ItemListPage> {
 
   void onSubcollectionCreated(String subcollectionName) {
     firestore.collection(caminho).doc(auth.currentUser!.uid).get().then((doc) {
-      List<dynamic> places = [];
+      Map<String, String> places = {};
 
       if (doc.exists) {
-        places = doc.get('places');
+        var existingPlaces = doc.get('places');
+        if (existingPlaces is Map) {
+          places = Map<String, String>.from(existingPlaces);
+        }
       }
 
-      if (!places.contains(subcollectionName)) {
-        places.add(subcollectionName);
+      if (!places.containsValue(subcollectionName)) {
+        var uuid = const Uuid();
+        var codigo = uuid.v4();
+
+        places[codigo] = subcollectionName;
+
         firestore
             .collection(caminho)
             .doc(auth.currentUser!.uid)
@@ -85,9 +93,63 @@ class _ItemListPageState extends State<ItemListPage> {
         firestore
             .collection(caminho)
             .doc(auth.currentUser!.uid)
-            .collection(subcollectionName)
+            .collection(codigo)
             .doc(auth.currentUser!.uid)
-            .set({'places': []});
+            .set({'places': {}});
+      }
+    });
+  }
+
+  void onSubcollectionDeleted(String pasta) async {
+
+    var doc = await firestore.collection(caminho).doc(auth.currentUser!.uid).get();
+    late String placeToRemove;
+    var places = doc.data();
+
+    if (places != null) {
+      places.forEach((key, value) {
+        if (value == pasta) {
+          placeToRemove = key;
+        }
+      });
+
+      places.remove(placeToRemove);
+
+      await firestore
+          .collection(caminho)
+          .doc(auth.currentUser!.uid)
+          .update({'places': places});
+    }
+  }
+
+  void onSubcollectionEdited(String novoNome, String nomeAtual) {
+    String caminhoProvisorio = historicoNavegacao.last;
+
+    setState(() {
+      tituloPagina = novoNome;
+    });
+
+    firestore
+        .collection(caminhoProvisorio)
+        .doc(auth.currentUser!.uid)
+        .get()
+        .then((doc) {
+      Map<String, String> places = doc.get('places');
+      late String placeToEdit;
+
+      places.forEach((key, value) {
+        if (value == nomeAtual) {
+          placeToEdit = key;
+        }
+      });
+
+      if (!places.containsValue(novoNome)) {
+        places[placeToEdit] = novoNome;
+
+        firestore
+            .collection(caminhoProvisorio)
+            .doc(auth.currentUser!.uid)
+            .set({'places': places});
       }
     });
   }
@@ -133,7 +195,94 @@ class _ItemListPageState extends State<ItemListPage> {
         },
         child: Scaffold(
           appBar: AppBar(
-            title: Text(tituloPagina),
+            title: Row(
+              children: [
+                Text(tituloPagina),
+                // if (returnable)
+                //   IconButton(
+                //     onPressed: () => {
+                //       showGeneralDialog(
+                //         context: context,
+                //         pageBuilder: (ctx, a1, a2) {
+                //           return Container();
+                //         },
+                //         transitionBuilder: (ctx, a1, a2, child) {
+                //           var curve = Curves.easeInOut.transform(a1.value);
+                //           return Transform.scale(
+                //             scale: curve,
+                //             child: AlertDialog(
+                //               title: Row(
+                //                 mainAxisAlignment:
+                //                     MainAxisAlignment.spaceBetween,
+                //                 children: [
+                //                   const Text("Editar Pasta"),
+                //                   IconButton(
+                //                     onPressed: () {
+                //                       Navigator.of(context).pop();
+                //                     },
+                //                     icon: const Icon(Icons.close),
+                //                   ),
+                //                 ],
+                //               ),
+                //               content: TextField(
+                //                 controller: _subcollectionNameController,
+                //                 decoration: const InputDecoration(
+                //                   labelText: 'Novo Nome',
+                //                 ),
+                //               ),
+                //               actionsPadding: const EdgeInsets.only(
+                //                   left: 16, right: 16, bottom: 20),
+                //               actions: <Widget>[
+                //                 Row(
+                //                   mainAxisAlignment:
+                //                       MainAxisAlignment.spaceBetween,
+                //                   children: [
+                //                     TextButton(
+                //                       onPressed: () {
+                //                         Navigator.pop(context);
+                //                         onSubcollectionDeleted(tituloPagina);
+                //                         _subcollectionNameController.clear();
+                //                       },
+                //                       child: const Text(
+                //                         "Deletar",
+                //                         style: TextStyle(
+                //                           color: Colors.red,
+                //                           fontSize: 17,
+                //                         ),
+                //                       ),
+                //                     ),
+                //                     TextButton(
+                //                       onPressed: () {
+                //                         String subcollectionName =
+                //                             _subcollectionNameController.text;
+                //                         if (subcollectionName.isNotEmpty) {
+                //                           Navigator.pop(context);
+                //                           onSubcollectionEdited(
+                //                               subcollectionName, tituloPagina);
+                //                         }
+                //                         _subcollectionNameController.clear();
+                //                       },
+                //                       child: const Text(
+                //                         "Editar",
+                //                         style: TextStyle(
+                //                           color: Colors.red,
+                //                           fontSize: 17,
+                //                         ),
+                //                       ),
+                //                     ),
+                //                   ],
+                //                 ),
+                //               ],
+                //             ),
+                //           );
+                //         },
+                //         transitionDuration: const Duration(milliseconds: 300),
+                //       )
+                //     },
+                //     icon: const Icon(Icons.edit),
+                //   ),
+              ],
+            ),
             leading: !returnable
                 ? null
                 : IconButton(
@@ -142,10 +291,11 @@ class _ItemListPageState extends State<ItemListPage> {
                   ),
             actions: [
               //Home
-              if (returnable) IconButton(
-                onPressed: home,
-                icon: const Icon(Icons.home_rounded),
-              ),
+              if (returnable)
+                IconButton(
+                  onPressed: home,
+                  icon: const Icon(Icons.home_rounded),
+                ),
               //Logout
               PopupMenuButton<String>(
                 icon: const Icon(Icons.person),

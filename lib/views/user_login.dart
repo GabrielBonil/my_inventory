@@ -88,7 +88,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
             .doc(usuario)
             .collection('MyInventory')
             .doc(usuario)
-            .set({'places': []});
+            .set({'places': {}});
 
         //Lógica dos modelos:
         Map<String, dynamic> modeloPadrao = {

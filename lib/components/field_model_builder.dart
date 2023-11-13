@@ -70,8 +70,15 @@ class FieldModelBuilder extends StatelessWidget {
           labelText: labelText,
           hintText: labelText,
         ),
-        onSaved: (newValue) =>
-            valueList[index] = double.parse(newValue!.replaceAll(',', '.')),
+        onSaved: (newValue) {
+          double novoValor;
+          if (!newValue!.contains(",")){
+            novoValor = double.parse("$newValue.0");
+          } else {
+            novoValor = double.parse(newValue.replaceAll(',', '.'));
+          }
+          valueList[index] = novoValor;
+        },
         validator: validarItem,
       );
     } else if (fieldType == 'Calendário') {

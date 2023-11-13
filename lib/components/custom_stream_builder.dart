@@ -61,7 +61,8 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
           // Verifica se há o documento auth.currentUser!.uid e se tem subcoleções
           if (collectionsData.isNotEmpty) {
             subCollectionsExist = true;
-            subColecoes = collectionsData['places'].cast<String>();
+            subColecoes =
+                collectionsData['places'].values.cast<String>().toList();
           }
         }
 
@@ -91,18 +92,47 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
 
                             _handleNavigate(novoCaminho);
                           },
-                          child: Container(
-                            color: Colors.blue,
-                            child: Center(
-                              child: Text(e.toString()),
-                            ),
+                          child: LayoutBuilder(
+                            builder: (p0, p1) {
+                              double iconSize = p1.maxHeight * 0.8;
+                              return Column(
+                                children: [
+                                  Icon(Icons.folder, size: iconSize, color: Colors.blue,),
+                                  Text(e.toString()),
+                                ],
+                              );
+                            },
                           ),
+                          // child: Container(
+                          //   color: Colors.blue,
+                          //   child: Center(
+                          //     child: Text(e.toString()),
+                          //   ),
+                          // ),
                         ),
                       )
                       .toList(),
                 ],
               ),
-            ...outrosDocumentos.map((e) => MyItems(document: e)).toList(),
+            // ...outrosDocumentos.map((e) => MyItems(document: e)).toList(),
+            ...outrosDocumentos
+                .map(
+                  (e) => Dismissible(
+                    key: Key(e.id),
+                    onDismissed: (direction) {
+                      FirebaseFirestore.instance
+                          .collection(widget.caminho)
+                          .doc(e.id)
+                          .delete();
+                    },
+                    background: Container(color: Colors.red),
+                    child: MyItems(
+                      document: e,
+                      caminho: widget.caminho,
+                    ),
+                  ),
+                )
+                .toList(),
           ],
         );
       },
