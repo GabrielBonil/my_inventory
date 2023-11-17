@@ -24,6 +24,7 @@ class _ItemListPageState extends State<ItemListPage> {
   List<DocumentSnapshot> outrosDocumentos = [];
   late String caminho = 'users/${auth.currentUser!.uid}/MyInventory';
   String tituloPagina = 'MyInventory';
+  List<String> historicoTitulos = ['MyInventory'];
   List<String> historicoNavegacao = [];
   bool returnable = false;
   final TextEditingController _subcollectionNameController =
@@ -44,6 +45,7 @@ class _ItemListPageState extends State<ItemListPage> {
       });
       historicoNavegacao.removeLast();
       updateTitle(caminho);
+      historicoTitulos.removeLast();
     }
   }
 
@@ -54,6 +56,7 @@ class _ItemListPageState extends State<ItemListPage> {
       });
       historicoNavegacao.clear();
       updateTitle(caminho);
+      historicoTitulos = ['MyInventory'];
     }
   }
 
@@ -101,8 +104,8 @@ class _ItemListPageState extends State<ItemListPage> {
   }
 
   void onSubcollectionDeleted(String pasta) async {
-
-    var doc = await firestore.collection(caminho).doc(auth.currentUser!.uid).get();
+    var doc =
+        await firestore.collection(caminho).doc(auth.currentUser!.uid).get();
     late String placeToRemove;
     var places = doc.data();
 
@@ -323,6 +326,7 @@ class _ItemListPageState extends State<ItemListPage> {
           body: CustomStreamBuilder(
             caminho: caminho,
             updatePath: _updatePath,
+            historicoTitulos: historicoTitulos,
           ),
           floatingActionButton: SpeedDial(
             backgroundColor: Colors.black,

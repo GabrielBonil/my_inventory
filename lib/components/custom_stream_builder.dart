@@ -7,10 +7,12 @@ import 'package:tg/components/my_items.dart';
 class CustomStreamBuilder extends StatefulWidget {
   final String caminho;
   final Function(String) updatePath;
+  final List<String> historicoTitulos;
   const CustomStreamBuilder({
     super.key,
     required this.caminho,
     required this.updatePath,
+    required this.historicoTitulos,
   });
 
   @override
@@ -68,6 +70,7 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
 
         return ListView(
           children: [
+            Text('${widget.historicoTitulos}'),
             if (subCollectionsExist && subColecoes.isNotEmpty)
               GridView.count(
                 crossAxisCount: 4,

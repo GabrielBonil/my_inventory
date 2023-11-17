@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -95,15 +97,36 @@ class _ShowItemModalState extends State<ShowItemModal> {
       TextEditingController editController,
     ) {
       if (type == 'Número Inteiro') {
-        return TextField(
-          controller: editController,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: const InputDecoration(
-            labelText: 'Novo valor',
-            hintText: 'Novo valor',
-          ),
-          onChanged: (value) => nomeEditado = value,
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              onPressed: () {
+                editController.text =
+                    (int.parse(editController.text) - 1).toString();
+                nomeEditado = editController.text;
+              },
+              icon: const Icon(Icons.remove),
+            ),
+            TextField(
+              controller: editController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(
+                labelText: 'Novo valor',
+                hintText: 'Novo valor',
+              ),
+              onChanged: (value) => nomeEditado = value,
+            ),
+            IconButton(
+              onPressed: () {
+                editController.text =
+                    (int.parse(editController.text) + 1).toString();
+                nomeEditado = editController.text;
+              },
+              icon: const Icon(Icons.add),
+            ),
+          ],
         );
       } else if (type == 'Número Decimal') {
         editController.text =
@@ -351,7 +374,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
 
                                   if (type == 'Descrição') {
                                     return ListTile(
-                                      leading: IconButton(
+                                      trailing: IconButton(
                                         onPressed: () => deletarCampo(
                                           widget.document.id,
                                           campo,
@@ -361,7 +384,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
                                       ),
                                       title: Text(campo),
                                       subtitle: Text(valor.toString()),
-                                      trailing: IconButton(
+                                      leading: IconButton(
                                         onPressed: () => editarCampo(
                                           campo,
                                           valor,
@@ -375,7 +398,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
 
                                   if (type == 'Número Inteiro') {
                                     return ListTile(
-                                      leading: IconButton(
+                                      trailing: IconButton(
                                         onPressed: () => deletarCampo(
                                           widget.document.id,
                                           campo,
@@ -388,33 +411,33 @@ class _ShowItemModalState extends State<ShowItemModal> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Text(campo),
-                                          IconButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                valor--;
-                                              });
-                                              FirebaseFirestore.instance
-                                                  .collection(widget.caminho)
-                                                  .doc(widget.document.id)
-                                                  .update({campo: valor});
-                                            },
-                                            icon: const Icon(Icons.remove),
-                                          ),
-                                          IconButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                valor++;
-                                              });
-                                              FirebaseFirestore.instance
-                                                  .collection(widget.caminho)
-                                                  .doc(widget.document.id)
-                                                  .update({campo: valor});
-                                            },
-                                            icon: const Icon(Icons.add),
-                                          ),
+                                          // IconButton(
+                                          //   onPressed: () {
+                                          //     setState(() {
+                                          //       valor--;
+                                          //     });
+                                          //     FirebaseFirestore.instance
+                                          //         .collection(widget.caminho)
+                                          //         .doc(widget.document.id)
+                                          //         .update({campo: valor});
+                                          //   },
+                                          //   icon: const Icon(Icons.remove),
+                                          // ),
+                                          // IconButton(
+                                          //   onPressed: () {
+                                          //     setState(() {
+                                          //       valor++;
+                                          //     });
+                                          //     FirebaseFirestore.instance
+                                          //         .collection(widget.caminho)
+                                          //         .doc(widget.document.id)
+                                          //         .update({campo: valor});
+                                          //   },
+                                          //   icon: const Icon(Icons.add),
+                                          // ),
                                         ],
                                       ),
-                                      trailing: IconButton(
+                                      leading: IconButton(
                                         onPressed: () => editarCampo(
                                           campo,
                                           valor,
@@ -429,7 +452,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
 
                                   if (type == 'Número Decimal') {
                                     return ListTile(
-                                      leading: IconButton(
+                                      trailing: IconButton(
                                         onPressed: () => deletarCampo(
                                           widget.document.id,
                                           campo,
@@ -441,7 +464,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
                                       subtitle: Text(valor
                                           .toString()
                                           .replaceAll('.', ',')),
-                                      trailing: IconButton(
+                                      leading: IconButton(
                                         onPressed: () => editarCampo(
                                           campo,
                                           valor,
@@ -453,7 +476,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
                                     );
                                   } else if (type == 'Calendário') {
                                     return ListTile(
-                                      leading: IconButton(
+                                      trailing: IconButton(
                                         onPressed: () => deletarCampo(
                                           widget.document.id,
                                           campo,
@@ -464,7 +487,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
                                       title: Text(campo),
                                       subtitle: Text(DateFormat('dd/MM/yyyy')
                                           .format(valor.toDate())),
-                                      trailing: IconButton(
+                                      leading: IconButton(
                                         onPressed: () => editarCampo(
                                           campo,
                                           valor,
@@ -477,7 +500,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
                                   }
 
                                   return ListTile(
-                                    leading: IconButton(
+                                    trailing: IconButton(
                                       onPressed: () => deletarCampo(
                                         widget.document.id,
                                         campo,
@@ -487,7 +510,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
                                     ),
                                     title: Text(campo),
                                     subtitle: Text(valor.toString()),
-                                    trailing: IconButton(
+                                    leading: IconButton(
                                       onPressed: () => editarCampo(
                                         campo,
                                         valor,
