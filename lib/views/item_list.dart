@@ -6,7 +6,7 @@ import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:tg/views/item_create.dart';
 import 'package:uuid/uuid.dart';
 // import 'package:tg/components/loading.dart';
-// import 'package:fluttertoast/fluttertoast.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class ItemListPage extends StatefulWidget {
   const ItemListPage({super.key});
@@ -34,6 +34,7 @@ class _ItemListPageState extends State<ItemListPage> {
     setState(() {
       historicoNavegacao.add(caminho);
       caminho = novoCaminho;
+      historicoTitulos.add(caminho.split('/').last);
     });
     updateTitle(caminho);
   }
@@ -46,6 +47,26 @@ class _ItemListPageState extends State<ItemListPage> {
       historicoNavegacao.removeLast();
       updateTitle(caminho);
       historicoTitulos.removeLast();
+    }
+  }
+
+  void _handlePathNavigate(int index) {
+
+    var handleCaminho = "";
+
+    if (index != historicoTitulos.length - 1) {
+      // Remover itens do histórico até o índice especificado
+      int itemsToRemove = historicoTitulos.length - 1 - index;
+      for (var i = 0; i < itemsToRemove; i++) {
+        handleCaminho = historicoNavegacao.last;
+        historicoTitulos.removeLast();
+        historicoNavegacao.removeLast();
+      }
+
+      setState(() {
+        caminho = handleCaminho;
+        updateTitle(caminho);
+      });
     }
   }
 
@@ -99,6 +120,16 @@ class _ItemListPageState extends State<ItemListPage> {
             .collection(codigo)
             .doc(auth.currentUser!.uid)
             .set({'places': {}});
+      } else {
+        Fluttertoast.showToast(
+          msg: "Pasta $subcollectionName já existente",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.TOP,
+          timeInSecForIosWeb: 5,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
       }
     });
   }
@@ -327,6 +358,7 @@ class _ItemListPageState extends State<ItemListPage> {
             caminho: caminho,
             updatePath: _updatePath,
             historicoTitulos: historicoTitulos,
+            handlePathNavigate: _handlePathNavigate,
           ),
           floatingActionButton: SpeedDial(
             backgroundColor: Colors.black,

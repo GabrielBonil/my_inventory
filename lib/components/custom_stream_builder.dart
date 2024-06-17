@@ -8,12 +8,13 @@ class CustomStreamBuilder extends StatefulWidget {
   final String caminho;
   final Function(String) updatePath;
   final List<String> historicoTitulos;
-  const CustomStreamBuilder({
-    super.key,
-    required this.caminho,
-    required this.updatePath,
-    required this.historicoTitulos,
-  });
+  final Function(int) handlePathNavigate;
+  const CustomStreamBuilder(
+      {super.key,
+      required this.caminho,
+      required this.updatePath,
+      required this.historicoTitulos,
+      required this.handlePathNavigate});
 
   @override
   State<CustomStreamBuilder> createState() => _CustomStreamBuilderState();
@@ -54,6 +55,13 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
           }
         }
 
+        //Ordenando itens
+        outrosDocumentos.sort((a, b) {
+          var nameA = a['Nome'].toString().toLowerCase();
+          var nameB = b['Nome'].toString().toLowerCase();
+          return nameA.compareTo(nameB);
+        });
+
         // Verifica se o documento auth.currentUser!.uid está presente
         if (snapshot.data!.docs.any((doc) => doc.id == auth.currentUser!.uid)) {
           var collectionsDoc = snapshot.data!.docs
@@ -65,12 +73,26 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
             subCollectionsExist = true;
             subColecoes =
                 collectionsData['places'].values.cast<String>().toList();
+
+            //Ordenando Pastas
+            subColecoes.sort();
           }
         }
 
         return ListView(
           children: [
-            Text('${widget.historicoTitulos}'),
+            //Pathing
+            Row(
+              children: [
+                ...widget.historicoTitulos.asMap().entries.map(
+                      (e) => TextButton(
+                        onPressed: () => widget.handlePathNavigate(e.key),
+                        child: Text(e.value),
+                      ),
+                    ),
+              ],
+            ),
+            // Text('${widget.historicoTitulos}'),
             if (subCollectionsExist && subColecoes.isNotEmpty)
               GridView.count(
                 crossAxisCount: 4,
@@ -100,7 +122,11 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
                               double iconSize = p1.maxHeight * 0.8;
                               return Column(
                                 children: [
-                                  Icon(Icons.folder, size: iconSize, color: Colors.blue,),
+                                  Icon(
+                                    Icons.folder,
+                                    size: iconSize,
+                                    color: Colors.blue,
+                                  ),
                                   Text(e.toString()),
                                 ],
                               );
@@ -122,13 +148,57 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
                 .map(
                   (e) => Dismissible(
                     key: Key(e.id),
+                    direction: DismissDirection.startToEnd,
                     onDismissed: (direction) {
                       FirebaseFirestore.instance
                           .collection(widget.caminho)
                           .doc(e.id)
                           .delete();
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('Item deleted'),
+                          action: SnackBarAction(
+                            label: 'UNDO',
+                            onPressed: () {
+                              FirebaseFirestore.instance
+                                  .collection(widget.caminho)
+                                  .doc(e.id)
+                                  .set(e.data() as Map<String, dynamic>);
+                              // setState(() {
+                              //   items.add(doc);
+                              // });
+                              ;
+                            },
+                          ),
+                        ),
+                      );
                     },
-                    background: Container(color: Colors.red),
+                    background: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        color: Colors.transparent,
+                        child: const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Icon(Icons.delete_outlined, color: Colors.red),
+                        ),
+                        // Row(
+                        //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        //   children: const [
+                        //     Padding(
+                        //       padding: EdgeInsets.all(16.0),
+                        //       child:
+                        //           Icon(Icons.delete_outlined, color: Colors.red),
+                        //     ),
+                        //     Padding(
+                        //       padding: EdgeInsets.all(16.0),
+                        //       child:
+                        //           Icon(Icons.delete_outlined, color: Colors.red),
+                        //     ),
+                        //   ],
+                        // ),
+                      ),
+                    ),
                     child: MyItems(
                       document: e,
                       caminho: widget.caminho,

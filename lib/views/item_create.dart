@@ -164,6 +164,7 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
 
                     getModelos();
                     modeloSelecionado = nomeModelo;
+                    // ignore: use_build_context_synchronously
                     Navigator.pop(context);
                   },
                   child: const Text(

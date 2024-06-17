@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -97,36 +95,15 @@ class _ShowItemModalState extends State<ShowItemModal> {
       TextEditingController editController,
     ) {
       if (type == 'Número Inteiro') {
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              onPressed: () {
-                editController.text =
-                    (int.parse(editController.text) - 1).toString();
-                nomeEditado = editController.text;
-              },
-              icon: const Icon(Icons.remove),
-            ),
-            TextField(
-              controller: editController,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                labelText: 'Novo valor',
-                hintText: 'Novo valor',
-              ),
-              onChanged: (value) => nomeEditado = value,
-            ),
-            IconButton(
-              onPressed: () {
-                editController.text =
-                    (int.parse(editController.text) + 1).toString();
-                nomeEditado = editController.text;
-              },
-              icon: const Icon(Icons.add),
-            ),
-          ],
+        return TextField(
+          controller: editController,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: const InputDecoration(
+            labelText: 'Novo valor',
+            hintText: 'Novo valor',
+          ),
+          onChanged: (value) => nomeEditado = value,
         );
       } else if (type == 'Número Decimal') {
         editController.text =
@@ -212,58 +189,83 @@ class _ShowItemModalState extends State<ShowItemModal> {
               ),
               content: editField(type, editController),
               actions: <Widget>[
-                TextButton(
-                  onPressed: () async {
-                    if (type == 'Calendário') {
-                      firestore.collection(widget.caminho).doc(id).update(
-                          {campo: DateFormat('dd/MM/yyyy').parse(nomeEditado)});
-                    }
-                    if (type == 'Número Inteiro') {
-                      firestore
-                          .collection(widget.caminho)
-                          .doc(id)
-                          .update({campo: int.parse(nomeEditado)});
-                    }
-                    if (type == 'Número Decimal') {
-                      double novoValor;
-                      if (!nomeEditado.contains(",")) {
-                        novoValor = double.parse("$nomeEditado.0");
-                      } else {
-                        novoValor =
-                            double.parse(nomeEditado.replaceAll(',', '.'));
-                      }
-                      firestore
-                          .collection(widget.caminho)
-                          .doc(id)
-                          .update({campo: novoValor});
-                    }
-                    if (type == 'Descrição') {
-                      firestore
-                          .collection(widget.caminho)
-                          .doc(id)
-                          .update({campo: nomeEditado});
-                    }
-                    // if (type == 'Money'){
-                    //   firestore
-                    //     .collection(widget.caminho)
-                    //     .doc(id)
-                    //     .update({campo: nomeEditado});
-                    // }
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          deletarCampo(widget.document.id, campo);
+                          Navigator.pop(context);
+                        },
+                        child: const Text(
+                          "Deletar",
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontSize: 17,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          if (type == 'Calendário') {
+                            firestore
+                                .collection(widget.caminho)
+                                .doc(id)
+                                .update({
+                              campo: DateFormat('dd/MM/yyyy').parse(nomeEditado)
+                            });
+                          }
+                          if (type == 'Número Inteiro') {
+                            firestore
+                                .collection(widget.caminho)
+                                .doc(id)
+                                .update({campo: int.parse(nomeEditado)});
+                          }
+                          if (type == 'Número Decimal') {
+                            double novoValor;
+                            if (!nomeEditado.contains(",")) {
+                              novoValor = double.parse("$nomeEditado.0");
+                            } else {
+                              novoValor = double.parse(
+                                  nomeEditado.replaceAll(',', '.'));
+                            }
+                            firestore
+                                .collection(widget.caminho)
+                                .doc(id)
+                                .update({campo: novoValor});
+                          }
+                          if (type == 'Descrição') {
+                            firestore
+                                .collection(widget.caminho)
+                                .doc(id)
+                                .update({campo: nomeEditado});
+                          }
+                          // if (type == 'Money'){
+                          //   firestore
+                          //     .collection(widget.caminho)
+                          //     .doc(id)
+                          //     .update({campo: nomeEditado});
+                          // }
 
-                    // firestore
-                    //     .collection(widget.caminho)
-                    //     .doc(id)
-                    //     .update({campo: nomeEditado});
+                          // firestore
+                          //     .collection(widget.caminho)
+                          //     .doc(id)
+                          //     .update({campo: nomeEditado});
 
-                    nomeEditado = '';
-                    Navigator.pop(context);
-                  },
-                  child: const Text(
-                    "Editar",
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontSize: 17,
-                    ),
+                          nomeEditado = '';
+                          Navigator.pop(context);
+                        },
+                        child: const Text(
+                          "Editar",
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontSize: 17,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -278,9 +280,9 @@ class _ShowItemModalState extends State<ShowItemModal> {
       behavior: HitTestBehavior.opaque,
       onTap: () => Navigator.of(context).pop(),
       child: DraggableScrollableSheet(
-        initialChildSize: 0.4,
-        minChildSize: .4,
-        maxChildSize: .7,
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.8,
         builder: (context, scrollController) => Container(
           decoration: BoxDecoration(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
@@ -374,17 +376,17 @@ class _ShowItemModalState extends State<ShowItemModal> {
 
                                   if (type == 'Descrição') {
                                     return ListTile(
-                                      trailing: IconButton(
-                                        onPressed: () => deletarCampo(
-                                          widget.document.id,
-                                          campo,
-                                        ),
-                                        icon: const Icon(Icons.delete_outline,
-                                            color: Colors.red),
-                                      ),
+                                      // leading: IconButton(
+                                      //   onPressed: () => deletarCampo(
+                                      //     widget.document.id,
+                                      //     campo,
+                                      //   ),
+                                      //   icon: const Icon(Icons.delete_outline,
+                                      //       color: Colors.red),
+                                      // ),
                                       title: Text(campo),
                                       subtitle: Text(valor.toString()),
-                                      leading: IconButton(
+                                      trailing: IconButton(
                                         onPressed: () => editarCampo(
                                           campo,
                                           valor,
@@ -398,14 +400,14 @@ class _ShowItemModalState extends State<ShowItemModal> {
 
                                   if (type == 'Número Inteiro') {
                                     return ListTile(
-                                      trailing: IconButton(
-                                        onPressed: () => deletarCampo(
-                                          widget.document.id,
-                                          campo,
-                                        ),
-                                        icon: const Icon(Icons.delete_outline,
-                                            color: Colors.red),
-                                      ),
+                                      // leading: IconButton(
+                                      //   onPressed: () => deletarCampo(
+                                      //     widget.document.id,
+                                      //     campo,
+                                      //   ),
+                                      //   icon: const Icon(Icons.delete_outline,
+                                      //       color: Colors.red),
+                                      // ),
                                       subtitle: Text(valor.toString()),
                                       title: Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -437,7 +439,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
                                           // ),
                                         ],
                                       ),
-                                      leading: IconButton(
+                                      trailing: IconButton(
                                         onPressed: () => editarCampo(
                                           campo,
                                           valor,
@@ -452,19 +454,19 @@ class _ShowItemModalState extends State<ShowItemModal> {
 
                                   if (type == 'Número Decimal') {
                                     return ListTile(
-                                      trailing: IconButton(
-                                        onPressed: () => deletarCampo(
-                                          widget.document.id,
-                                          campo,
-                                        ),
-                                        icon: const Icon(Icons.delete_outline,
-                                            color: Colors.red),
-                                      ),
+                                      // leading: IconButton(
+                                      //   onPressed: () => deletarCampo(
+                                      //     widget.document.id,
+                                      //     campo,
+                                      //   ),
+                                      //   icon: const Icon(Icons.delete_outline,
+                                      //       color: Colors.red),
+                                      // ),
                                       title: Text(campo),
                                       subtitle: Text(valor
                                           .toString()
                                           .replaceAll('.', ',')),
-                                      leading: IconButton(
+                                      trailing: IconButton(
                                         onPressed: () => editarCampo(
                                           campo,
                                           valor,
@@ -476,18 +478,18 @@ class _ShowItemModalState extends State<ShowItemModal> {
                                     );
                                   } else if (type == 'Calendário') {
                                     return ListTile(
-                                      trailing: IconButton(
-                                        onPressed: () => deletarCampo(
-                                          widget.document.id,
-                                          campo,
-                                        ),
-                                        icon: const Icon(Icons.delete_outline,
-                                            color: Colors.red),
-                                      ),
+                                      // leading: IconButton(
+                                      //   onPressed: () => deletarCampo(
+                                      //     widget.document.id,
+                                      //     campo,
+                                      //   ),
+                                      //   icon: const Icon(Icons.delete_outline,
+                                      //       color: Colors.red),
+                                      // ),
                                       title: Text(campo),
                                       subtitle: Text(DateFormat('dd/MM/yyyy')
                                           .format(valor.toDate())),
-                                      leading: IconButton(
+                                      trailing: IconButton(
                                         onPressed: () => editarCampo(
                                           campo,
                                           valor,
@@ -500,17 +502,17 @@ class _ShowItemModalState extends State<ShowItemModal> {
                                   }
 
                                   return ListTile(
-                                    trailing: IconButton(
-                                      onPressed: () => deletarCampo(
-                                        widget.document.id,
-                                        campo,
-                                      ),
-                                      icon: const Icon(Icons.delete_outline,
-                                          color: Colors.red),
-                                    ),
+                                    // leading: IconButton(
+                                    //   onPressed: () => deletarCampo(
+                                    //     widget.document.id,
+                                    //     campo,
+                                    //   ),
+                                    //   icon: const Icon(Icons.delete_outline,
+                                    //       color: Colors.red),
+                                    // ),
                                     title: Text(campo),
                                     subtitle: Text(valor.toString()),
-                                    leading: IconButton(
+                                    trailing: IconButton(
                                       onPressed: () => editarCampo(
                                         campo,
                                         valor,
