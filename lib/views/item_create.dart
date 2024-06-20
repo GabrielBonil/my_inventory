@@ -170,7 +170,7 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
                   child: const Text(
                     "Criar",
                     style: TextStyle(
-                      color: Colors.red,
+                      color: Colors.blue,
                       fontSize: 17,
                     ),
                   ),
@@ -307,7 +307,7 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
                                       child: const Text(
                                         "Criar",
                                         style: TextStyle(
-                                          color: Colors.red,
+                                          color: Colors.blue,
                                           fontSize: 17,
                                         ),
                                       ),

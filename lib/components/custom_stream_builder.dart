@@ -9,12 +9,25 @@ class CustomStreamBuilder extends StatefulWidget {
   final Function(String) updatePath;
   final List<String> historicoTitulos;
   final Function(int) handlePathNavigate;
-  const CustomStreamBuilder(
-      {super.key,
-      required this.caminho,
-      required this.updatePath,
-      required this.historicoTitulos,
-      required this.handlePathNavigate});
+  final Function(String) longPressActive;
+  final bool longPress;
+  final Function(String) incrementSelecionado;
+  final Function(String) decrementSelecionado;
+  final Function() handleSelected;
+  final List<String> selected;
+  const CustomStreamBuilder({
+    super.key,
+    required this.caminho,
+    required this.updatePath,
+    required this.historicoTitulos,
+    required this.handlePathNavigate,
+    required this.longPressActive,
+    required this.longPress,
+    required this.incrementSelecionado,
+    required this.decrementSelecionado,
+    required this.handleSelected,
+    required this.selected,
+  });
 
   @override
   State<CustomStreamBuilder> createState() => _CustomStreamBuilderState();
@@ -24,7 +37,7 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
   bool subCollectionsExist = false;
-  List<String> subColecoes = [];
+  Map<String, String> subColecoes = {};
   List<DocumentSnapshot> outrosDocumentos = [];
 
   void _handleNavigate(String novoCaminho) {
@@ -71,26 +84,32 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
           // Verifica se há o documento auth.currentUser!.uid e se tem subcoleções
           if (collectionsData.isNotEmpty) {
             subCollectionsExist = true;
-            subColecoes =
-                collectionsData['places'].values.cast<String>().toList();
+
+            // subColecoes = collectionsData['places'].values.cast<String>().toList();
+            subColecoes = Map<String, String>.from(collectionsData['places']);
 
             //Ordenando Pastas
-            subColecoes.sort();
+            // subColecoes.sort();
+            subColecoes = Map.fromEntries(subColecoes.entries.toList()
+              ..sort((e1, e2) => e1.value.compareTo(e2.value)));
           }
         }
 
         return ListView(
           children: [
             //Pathing
-            Row(
-              children: [
-                ...widget.historicoTitulos.asMap().entries.map(
-                      (e) => TextButton(
-                        onPressed: () => widget.handlePathNavigate(e.key),
-                        child: Text(e.value),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ...widget.historicoTitulos.asMap().entries.map(
+                        (e) => TextButton(
+                          onPressed: () => widget.handlePathNavigate(e.key),
+                          child: Text(e.value),
+                        ),
                       ),
-                    ),
-              ],
+                ],
+              ),
             ),
             // Text('${widget.historicoTitulos}'),
             if (subCollectionsExist && subColecoes.isNotEmpty)
@@ -101,46 +120,70 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  ...subColecoes
-                      .map(
-                        (e) => GestureDetector(
-                          onTap: () {
-                            // print("Caminho: ${widget.caminho}");
-                            String novoCaminho =
-                                '${widget.caminho.toString()}/${auth.currentUser!.uid}/$e';
-                            // print("Novo Caminho: $novoCaminho");
+                  ...subColecoes.entries.map((e) {
+                    bool isSelected = widget.selected.contains(e.key);
+
+                    return GestureDetector(
+                      onTap: () {
+                        widget.handleSelected();
+                        if (widget.selected.contains(e.key)) {
+                          widget.decrementSelecionado(e.key);
+                        } else {
+                          if (!widget.longPress) {
+                            String novoCaminho = '${widget.caminho.toString()}/${auth.currentUser!.uid}/${e.key}';
 
                             setState(() {
-                              // outrosDocumentos.clear();
                               subColecoes.clear();
                             });
 
                             _handleNavigate(novoCaminho);
-                          },
-                          child: LayoutBuilder(
-                            builder: (p0, p1) {
-                              double iconSize = p1.maxHeight * 0.8;
-                              return Column(
-                                children: [
-                                  Icon(
-                                    Icons.folder,
-                                    size: iconSize,
-                                    color: Colors.blue,
-                                  ),
-                                  Text(e.toString()),
-                                ],
-                              );
-                            },
-                          ),
-                          // child: Container(
-                          //   color: Colors.blue,
-                          //   child: Center(
-                          //     child: Text(e.toString()),
-                          //   ),
-                          // ),
+                          } else {
+                            widget.incrementSelecionado(e.key);
+                          }
+                        }
+                      },
+                      onLongPress: () {
+                        widget.handleSelected();
+                        if (widget.selected.contains(e.key)) {
+                          widget.decrementSelecionado(e.key);
+                        } else {
+                          widget.longPressActive(e.key);
+                        }
+                      },
+                      child: LayoutBuilder(
+                        builder: (p0, p1) {
+                          double iconSize = p1.maxHeight * 0.7;
+                          return Stack(
+                  children: [
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.folder,
+                          size: iconSize,
+                          color: Colors.blue,
                         ),
-                      )
-                      .toList(),
+                        Text(e.value.toString()),
+                      ],
+                    ),
+                    if (widget.longPress)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: SizedBox(
+                          child: Icon(
+                            isSelected ? Icons.check_box_outlined : Icons.check_box_outline_blank_sharp,
+                            size: iconSize * 0.25,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+                        },
+                      ),
+                    );
+                  }).toList(),
                 ],
               ),
             // ...outrosDocumentos.map((e) => MyItems(document: e)).toList(),
@@ -157,9 +200,9 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: const Text('Item deleted'),
+                          content: const Text('Item deletado'),
                           action: SnackBarAction(
-                            label: 'UNDO',
+                            label: 'DESFAZER',
                             onPressed: () {
                               FirebaseFirestore.instance
                                   .collection(widget.caminho)
@@ -168,7 +211,6 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
                               // setState(() {
                               //   items.add(doc);
                               // });
-                              ;
                             },
                           ),
                         ),

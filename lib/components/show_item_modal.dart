@@ -94,6 +94,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
       String type,
       TextEditingController editController,
     ) {
+      nomeEditado = editController.text;
       if (type == 'Número Inteiro') {
         return TextField(
           controller: editController,
@@ -147,7 +148,16 @@ class _ShowItemModalState extends State<ShowItemModal> {
           // },
           onChanged: (value) => nomeEditado = value,
         );
-      } else if (type == 'Descrição') {}
+      } else if (type == 'Descrição') {
+        return TextField(
+          controller: editController,
+          decoration: const InputDecoration(
+            labelText: 'Novo valor',
+            hintText: 'Novo valor',
+          ),
+          onChanged: (value) => nomeEditado = value,
+        );
+      }
       return TextField(
         controller: editController,
         decoration: const InputDecoration(
@@ -260,7 +270,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
                         child: const Text(
                           "Editar",
                           style: TextStyle(
-                            color: Colors.red,
+                            color: Colors.blue,
                             fontSize: 17,
                           ),
                         ),
@@ -610,7 +620,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
                                         child: const Text(
                                           "Criar",
                                           style: TextStyle(
-                                            color: Colors.red,
+                                            color: Colors.blue,
                                             fontSize: 17,
                                           ),
                                         ),
