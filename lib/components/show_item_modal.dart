@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:tg/components/loading.dart';
+import 'package:myinventory/components/loading.dart';
 import 'package:flutter_masked_text2/flutter_masked_text2.dart';
 // import 'package:date_time_picker/date_time_picker.dart';
 

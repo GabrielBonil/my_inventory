@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:tg/components/show_item_modal.dart';
+import 'package:myinventory/components/show_item_modal.dart';
 
 class MyItems extends StatelessWidget {
   final DocumentSnapshot<Object?> document;

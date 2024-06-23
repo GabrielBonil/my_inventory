@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:tg/components/loading.dart';
-import 'package:tg/components/my_items.dart';
+import 'package:myinventory/components/loading.dart';
+import 'package:myinventory/components/my_items.dart';
 
 class CustomStreamBuilder extends StatefulWidget {
   final String caminho;

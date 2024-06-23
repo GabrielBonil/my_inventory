@@ -3,13 +3,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:tg/components/custom_stream_builder.dart';
+import 'package:myinventory/components/custom_stream_builder.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:tg/views/item_create.dart';
+import 'package:myinventory/views/item_create.dart';
 import 'package:uuid/uuid.dart';
-// import 'package:tg/components/loading.dart';
+// import 'package:myinventory/components/loading.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:tg/components/destination_selector.dart';
+import 'package:myinventory/components/destination_selector.dart';
+import 'package:myinventory/views/item_model.dart';
 
 class ItemListPage extends StatefulWidget {
   const ItemListPage({super.key});
@@ -541,8 +542,12 @@ class _ItemListPageState extends State<ItemListPage> {
                 ? Text(tituloPagina)
                 : Row(
                     children: [
-                      //Editar LongPress individualmente
-                      Text("Selecionado $selecionado"),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: selecionado == 1
+                            ? Text("$selecionado item")
+                            : Text("$selecionado itens"),
+                      ),
                       if (selecionado == 1)
                         IconButton(
                           onPressed: () {
@@ -716,11 +721,11 @@ class _ItemListPageState extends State<ItemListPage> {
               SpeedDialChild(
                 child: const Icon(Icons.menu_book_outlined),
                 label: 'Modelo',
-                // onTap: () => Navigator.of(context).push(
-                //   MaterialPageRoute(
-                //     builder: (context) => ItemCreatePage(caminho: caminho),
-                //   ),
-                // ),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ModelManagementPage(),
+                  ),
+                ),
               ),
             ],
           ),

@@ -16,6 +16,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
   bool registrar = false;
   String email = '';
   String password = '';
+  String confirmPassword = '';
 
   FirebaseAuth auth = FirebaseAuth.instance;
   FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -24,10 +25,13 @@ class _UserLoginPageState extends State<UserLoginPage> {
     if (value == null || value.isEmpty || value.length < 6) {
       return 'O campo deve ter pelo menos 6 caracteres.';
     }
+    return null;
+  }
 
-    setState(() {
-      password = value;
-    });
+  String? validarConfirmacaoSenha(String? value) {
+    if (value != password) {
+      return 'As senhas não coincidem.';
+    }
     return null;
   }
 
@@ -35,14 +39,9 @@ class _UserLoginPageState extends State<UserLoginPage> {
     if (value == null || value.isEmpty) {
       return 'O campo não pode estar vazio';
     }
-
     if (!EmailValidator.validate(value)) {
-      return 'Digite um E-mail valido!';
+      return 'Digite um E-mail válido!';
     }
-
-    setState(() {
-      email = value;
-    });
     return null;
   }
 
@@ -51,7 +50,6 @@ class _UserLoginPageState extends State<UserLoginPage> {
   void logar(BuildContext context) async {
     if (formKey.currentState!.validate()) {
       formKey.currentState!.save();
-
       try {
         await auth.signInWithEmailAndPassword(
           email: email,
@@ -74,7 +72,6 @@ class _UserLoginPageState extends State<UserLoginPage> {
   void register(BuildContext context) async {
     if (formKey.currentState!.validate()) {
       formKey.currentState!.save();
-
       try {
         await auth.createUserWithEmailAndPassword(
           email: email,
@@ -90,16 +87,16 @@ class _UserLoginPageState extends State<UserLoginPage> {
             .doc(usuario)
             .set({'places': {}});
 
-        //Lógica dos modelos:
+        // Lógica dos modelos:
         Map<String, dynamic> modeloPadrao = {
           "Padrão": {"Nome": "Descrição"},
-          "Nome e Quantidade": {"Nome": "Descrição", "Quantidade": "Número Inteiro"},
+          "Nome e Quantidade": {
+            "Nome": "Descrição",
+            "Quantidade": "Número Inteiro"
+          },
         };
 
-        await firestore
-            .collection('users')
-            .doc(usuario)
-            .set(modeloPadrao);
+        await firestore.collection('users').doc(usuario).set(modeloPadrao);
       } catch (e) {
         Fluttertoast.showToast(
           msg: "Erro ao fazer registro: ${e.toString()}",
@@ -118,95 +115,130 @@ class _UserLoginPageState extends State<UserLoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: !registrar ? const Text("Login") : const Text("Registrar"),
+        title: Text(registrar ? "Registrar" : "Login"),
       ),
-      body: Form(
-        key: formKey,
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            //E-mail
-            TextFormField(
-              maxLength: 50,
-              decoration: const InputDecoration(
-                // icon: Icon(Icons.people_alt_rounded),
-                labelText: "E-mail",
-                hintText: "E-mail",
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.black),
-                ),
-              ),
-              onSaved: (newValue) {},
-              // autovalidateMode: AutovalidateMode.onUserInteraction,
-              validator: validarEmail,
-            ),
-
-            //Senha
-            TextFormField(
-              obscureText: !mostrarSenha,
-              maxLength: 50,
-              decoration: InputDecoration(
-                // icon: Icon(Icons.lock),
-                enabledBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.black),
-                ),
-                labelText: "Senha",
-                hintText: "Senha",
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    mostrarSenha ? Icons.visibility : Icons.visibility_off,
+            Form(
+              key: formKey,
+              child: Column(
+                children: [
+                  // E-mail
+                  TextFormField(
+                    maxLength: 50,
+                    decoration: const InputDecoration(
+                      labelText: "E-mail",
+                      hintText: "E-mail",
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black),
+                      ),
+                    ),
+                    validator: validarEmail,
+                    onSaved: (value) {
+                      email = value!;
+                    },
                   ),
+                  const SizedBox(height: 20),
+                  // Senha
+                  TextFormField(
+                    obscureText: !mostrarSenha,
+                    maxLength: 50,
+                    decoration: InputDecoration(
+                      enabledBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black),
+                      ),
+                      labelText: "Senha",
+                      hintText: "Senha",
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          mostrarSenha
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            mostrarSenha = !mostrarSenha;
+                          });
+                        },
+                      ),
+                    ),
+                    validator: validarSenha,
+                    onChanged: (value) {
+                      password = value;
+                    },
+                    onSaved: (value) {
+                      password = value!;
+                    },
+                  ),
+                  if (registrar) ...[
+                    const SizedBox(height: 20),
+                    // Confirmar Senha
+                    TextFormField(
+                      obscureText: !mostrarSenha,
+                      maxLength: 50,
+                      decoration: InputDecoration(
+                        enabledBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.black),
+                        ),
+                        labelText: "Confirmar Senha",
+                        hintText: "Confirmar Senha",
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            mostrarSenha
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              mostrarSenha = !mostrarSenha;
+                            });
+                          },
+                        ),
+                      ),
+                      validator: validarConfirmacaoSenha,
+                      onSaved: (value) {
+                        confirmPassword = value!;
+                      },
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Column(
+              children: [
+                // Botão Logar ou Registrar
+                SizedBox(
+                  width: MediaQuery.of(context).size.width - 40,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (registrar) {
+                        register(context);
+                      } else {
+                        logar(context);
+                      }
+                    },
+                    child: Text(registrar ? "Registrar" : "Logar"),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Alternar entre login e registro
+                TextButton(
                   onPressed: () {
                     setState(() {
-                      mostrarSenha = !mostrarSenha;
+                      registrar = !registrar;
                     });
                   },
+                  child: Text(
+                    registrar
+                        ? "Já tem uma conta? Clique aqui para Logar"
+                        : "Não tem uma conta? Clique aqui para criar uma!",
+                  ),
                 ),
-              ),
-              validator: validarSenha,
-              // autovalidateMode: AutovalidateMode.onUserInteraction,
+              ],
             ),
-
-            !registrar
-                ?
-                //Botão Logar
-                SizedBox(
-                    width: MediaQuery.of(context).size.width -
-                        40, //width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => logar(context),
-                      child: const Text("Logar"),
-                    ),
-                  )
-                : //Botão Registrar
-                SizedBox(
-                    width: MediaQuery.of(context).size.width -
-                        40, //width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => register(context),
-                      child: const Text("Registrar"),
-                    ),
-                  ),
-            !registrar
-                ? SizedBox(
-                    width: MediaQuery.of(context).size.width -
-                        40, //width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => setState(() {
-                        registrar = !registrar;
-                      }),
-                      child: const Text("Registrar"),
-                    ),
-                  )
-                : SizedBox(
-                    width: MediaQuery.of(context).size.width -
-                        40, //width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => setState(() {
-                        registrar = !registrar;
-                      }),
-                      child: const Text("Logar"),
-                    ),
-                  ),
           ],
         ),
       ),

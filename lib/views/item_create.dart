@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:tg/components/field_model_builder.dart';
+import 'package:myinventory/components/field_model_builder.dart';
 
 class ItemCreatePage extends StatefulWidget {
   final String caminho;
@@ -107,90 +107,90 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
         listaModelos.add(key);
       });
     });
-    setState(() {
-      listaModelos.add("Criar Modelo");
-    });
+    // setState(() {
+    //   listaModelos.add("Criar Modelo");
+    // });
   }
 
   void handleSelect(String? modelo) async {
-    if (modelo != "Criar Modelo") {
-      setState(() {
-        fieldList.clear();
-        typeList.clear();
-        valueList.clear();
-      });
-      var documento =
-          await firestore.collection('users').doc(auth.currentUser!.uid).get();
-      Map<String, dynamic>? mapaSelecionado = documento.data()?[modelo];
-      mapaSelecionado!.forEach((key, value) {
-        // print("Key: $key | Value: $value");
-        onNovoCampoCreated(key, value);
-      });
-    } else {
-      String nomeModelo = '';
-      showGeneralDialog(
-        context: context,
-        pageBuilder: (ctx, a1, a2) {
-          return Container();
-        },
-        transitionBuilder: (ctx, a1, a2, child) {
-          var curve = Curves.easeInOut.transform(a1.value);
-          return Transform.scale(
-            scale: curve,
-            child: AlertDialog(
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text("Criar Modelo"),
-                  IconButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-              content: TextField(
-                // controller: _subcollectionNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nome do Modelo',
-                  hintText: 'Nome do Modelo',
-                ),
-                onChanged: (value) => nomeModelo = value,
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () async {
-                    Map<String, dynamic> novoMapa = {};
-                    for (int i = 0; i < fieldList.length; i++) {
-                      novoMapa[fieldList[i]] = typeList[i];
-                    }
+    // if (modelo == "Criar Modelo") {
+    //   String nomeModelo = '';
+    //   showGeneralDialog(
+    //     context: context,
+    //     pageBuilder: (ctx, a1, a2) {
+    //       return Container();
+    //     },
+    //     transitionBuilder: (ctx, a1, a2, child) {
+    //       var curve = Curves.easeInOut.transform(a1.value);
+    //       return Transform.scale(
+    //         scale: curve,
+    //         child: AlertDialog(
+    //           title: Row(
+    //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    //             children: [
+    //               const Text("Criar Modelo"),
+    //               IconButton(
+    //                 onPressed: () {
+    //                   Navigator.of(context).pop();
+    //                 },
+    //                 icon: const Icon(Icons.close),
+    //               ),
+    //             ],
+    //           ),
+    //           content: TextField(
+    //             // controller: _subcollectionNameController,
+    //             decoration: const InputDecoration(
+    //               labelText: 'Nome do Modelo',
+    //               hintText: 'Nome do Modelo',
+    //             ),
+    //             onChanged: (value) => nomeModelo = value,
+    //           ),
+    //           actions: <Widget>[
+    //             TextButton(
+    //               onPressed: () async {
+    //                 Map<String, dynamic> novoMapa = {};
+    //                 for (int i = 0; i < fieldList.length; i++) {
+    //                   novoMapa[fieldList[i]] = typeList[i];
+    //                 }
 
-                    await firestore
-                        .collection('users')
-                        .doc(auth.currentUser!.uid)
-                        .update({nomeModelo: novoMapa});
+    //                 await firestore
+    //                     .collection('users')
+    //                     .doc(auth.currentUser!.uid)
+    //                     .update({nomeModelo: novoMapa});
 
-                    getModelos();
-                    modeloSelecionado = nomeModelo;
-                    // ignore: use_build_context_synchronously
-                    Navigator.pop(context);
-                  },
-                  child: const Text(
-                    "Criar",
-                    style: TextStyle(
-                      color: Colors.blue,
-                      fontSize: 17,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 300),
-      );
-    }
+    //                 getModelos();
+    //                 modeloSelecionado = nomeModelo;
+    //                 // ignore: use_build_context_synchronously
+    //                 Navigator.pop(context);
+    //               },
+    //               child: const Text(
+    //                 "Criar",
+    //                 style: TextStyle(
+    //                   color: Colors.blue,
+    //                   fontSize: 17,
+    //                 ),
+    //               ),
+    //             ),
+    //           ],
+    //         ),
+    //       );
+    //     },
+    //     transitionDuration: const Duration(milliseconds: 300),
+    //   );
+    //   return;
+    // }
+    setState(() {
+      fieldList.clear();
+      typeList.clear();
+      valueList.clear();
+    });
+    var documento =
+        await firestore.collection('users').doc(auth.currentUser!.uid).get();
+    Map<String, dynamic>? mapaSelecionado = documento.data()?[modelo];
+    mapaSelecionado!.forEach((key, value) {
+      // print("Key: $key | Value: $value");
+      onNovoCampoCreated(key, value);
+    });
   }
 
   @override
