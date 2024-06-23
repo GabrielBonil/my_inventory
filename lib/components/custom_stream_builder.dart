@@ -6,7 +6,6 @@ import 'package:tg/components/my_items.dart';
 
 class CustomStreamBuilder extends StatefulWidget {
   final String caminho;
-  final Function(String) updatePath;
   final List<String> historicoTitulos;
   final Function(int) handlePathNavigate;
   final Function(String) longPressActive;
@@ -15,10 +14,11 @@ class CustomStreamBuilder extends StatefulWidget {
   final Function(String) decrementSelecionado;
   final Function() handleSelected;
   final List<String> selected;
+  final Function(String) updateCurrentPath;
+  final String currentPath;
   const CustomStreamBuilder({
     super.key,
     required this.caminho,
-    required this.updatePath,
     required this.historicoTitulos,
     required this.handlePathNavigate,
     required this.longPressActive,
@@ -27,6 +27,8 @@ class CustomStreamBuilder extends StatefulWidget {
     required this.decrementSelecionado,
     required this.handleSelected,
     required this.selected,
+    required this.updateCurrentPath,
+    required this.currentPath,
   });
 
   @override
@@ -36,13 +38,8 @@ class CustomStreamBuilder extends StatefulWidget {
 class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
-  bool subCollectionsExist = false;
-  Map<String, String> subColecoes = {};
-  List<DocumentSnapshot> outrosDocumentos = [];
-
-  void _handleNavigate(String novoCaminho) {
-    widget.updatePath(novoCaminho);
-  }
+  Map<String, dynamic> pastas = {};
+  List<DocumentSnapshot> documentos = [];
 
   @override
   Widget build(BuildContext context) {
@@ -54,46 +51,47 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
         } else if (snapshot.hasError) {
           return Text('Erro ao obter dados dos itens: ${snapshot.error}');
         }
-        if (!snapshot.hasData ||
-            snapshot.data!.docs.isEmpty && snapshot.data!.docs.isEmpty) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Text('Nenhum item encontrado.');
         }
 
-        //Criando todos os documentos (exceto auth.currentUser!.uid):
-        outrosDocumentos = [];
-        for (var doc in snapshot.data!.docs) {
-          // Se o ID do documento não for auth.currentUser!.uid, adiciona à lista
+        // Procurar o documento do usuário
+        var userDoc = snapshot.data!.docs.firstWhere(
+          (doc) => doc.id == auth.currentUser!.uid,
+        );
+
+        // Obter places do documento do usuário
+        Map<String, dynamic> userDocData = userDoc.data();
+        var places = userDocData['places'] as Map<String, dynamic>? ?? {};
+
+        // Filtrar pastas que apontam para o currentPath atual
+        pastas = Map<String, dynamic>.from(
+          places
+            ..removeWhere((key, value) =>
+                value[auth.currentUser!.uid] != widget.currentPath),
+        );
+
+        // Ordenando pastas
+        pastas = Map.fromEntries(pastas.entries.toList()
+          ..sort((e1, e2) => e1.value['name']
+              .toLowerCase()
+              .compareTo(e2.value['name'].toLowerCase())));
+
+        // Filtrar outros documentos que apontam para o currentPath atual
+        var documentos = snapshot.data!.docs.where((doc) {
           if (doc.id != auth.currentUser!.uid) {
-            outrosDocumentos.add(doc);
+            Map<String, dynamic> data = doc.data();
+            return data[auth.currentUser!.uid] == widget.currentPath;
           }
-        }
+          return false;
+        }).toList();
 
         //Ordenando itens
-        outrosDocumentos.sort((a, b) {
+        documentos.sort((a, b) {
           var nameA = a['Nome'].toString().toLowerCase();
           var nameB = b['Nome'].toString().toLowerCase();
           return nameA.compareTo(nameB);
         });
-
-        // Verifica se o documento auth.currentUser!.uid está presente
-        if (snapshot.data!.docs.any((doc) => doc.id == auth.currentUser!.uid)) {
-          var collectionsDoc = snapshot.data!.docs
-              .firstWhere((element) => element.id == auth.currentUser!.uid);
-          Map<String, dynamic> collectionsData = collectionsDoc.data();
-
-          // Verifica se há o documento auth.currentUser!.uid e se tem subcoleções
-          if (collectionsData.isNotEmpty) {
-            subCollectionsExist = true;
-
-            // subColecoes = collectionsData['places'].values.cast<String>().toList();
-            subColecoes = Map<String, String>.from(collectionsData['places']);
-
-            //Ordenando Pastas
-            // subColecoes.sort();
-            subColecoes = Map.fromEntries(subColecoes.entries.toList()
-              ..sort((e1, e2) => e1.value.compareTo(e2.value)));
-          }
-        }
 
         return ListView(
           children: [
@@ -112,7 +110,7 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
               ),
             ),
             // Text('${widget.historicoTitulos}'),
-            if (subCollectionsExist && subColecoes.isNotEmpty)
+            if (pastas.isNotEmpty)
               GridView.count(
                 crossAxisCount: 4,
                 crossAxisSpacing: 10,
@@ -120,7 +118,7 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  ...subColecoes.entries.map((e) {
+                  ...pastas.entries.map((e) {
                     bool isSelected = widget.selected.contains(e.key);
 
                     return GestureDetector(
@@ -128,19 +126,16 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
                         widget.handleSelected();
                         if (widget.selected.contains(e.key)) {
                           widget.decrementSelecionado(e.key);
-                        } else {
-                          if (!widget.longPress) {
-                            String novoCaminho = '${widget.caminho.toString()}/${auth.currentUser!.uid}/${e.key}';
-
-                            setState(() {
-                              subColecoes.clear();
-                            });
-
-                            _handleNavigate(novoCaminho);
-                          } else {
-                            widget.incrementSelecionado(e.key);
-                          }
+                          return;
                         }
+                        if (widget.longPress) {
+                          widget.incrementSelecionado(e.key);
+                          return;
+                        }
+                        widget.updateCurrentPath(e.key);
+                        setState(() {
+                          pastas.clear();
+                        });
                       },
                       onLongPress: () {
                         widget.handleSelected();
@@ -154,100 +149,95 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
                         builder: (p0, p1) {
                           double iconSize = p1.maxHeight * 0.7;
                           return Stack(
-                  children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.folder,
-                          size: iconSize,
-                          color: Colors.blue,
-                        ),
-                        Text(e.value.toString()),
-                      ],
-                    ),
-                    if (widget.longPress)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: SizedBox(
-                          child: Icon(
-                            isSelected ? Icons.check_box_outlined : Icons.check_box_outline_blank_sharp,
-                            size: iconSize * 0.25,
-                            color: Colors.blue,
-                          ),
-                        ),
-                      ),
-                  ],
-                );
+                            children: [
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.folder,
+                                    size: iconSize,
+                                    color: Colors.blue,
+                                  ),
+                                  Text(e.value['name']),
+                                ],
+                              ),
+                              if (widget.longPress)
+                                Positioned(
+                                  top: 8,
+                                  right: 8,
+                                  child: SizedBox(
+                                    child: Icon(
+                                      isSelected
+                                          ? Icons.check_box_outlined
+                                          : Icons.check_box_outline_blank_sharp,
+                                      size: iconSize * 0.25,
+                                      color: Colors.blue,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          );
                         },
                       ),
                     );
                   }).toList(),
                 ],
               ),
-            // ...outrosDocumentos.map((e) => MyItems(document: e)).toList(),
-            ...outrosDocumentos
-                .map(
-                  (e) => Dismissible(
-                    key: Key(e.id),
-                    direction: DismissDirection.startToEnd,
-                    onDismissed: (direction) {
-                      FirebaseFirestore.instance
-                          .collection(widget.caminho)
-                          .doc(e.id)
-                          .delete();
+            ...documentos.map(
+              (e) {
+                bool isSelected = widget.selected.contains(e.id);
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Item deletado'),
-                          action: SnackBarAction(
-                            label: 'DESFAZER',
-                            onPressed: () {
-                              FirebaseFirestore.instance
-                                  .collection(widget.caminho)
-                                  .doc(e.id)
-                                  .set(e.data() as Map<String, dynamic>);
-                              // setState(() {
-                              //   items.add(doc);
-                              // });
-                            },
-                          ),
+                return Dismissible(
+                  key: Key(e.id),
+                  direction: !widget.longPress
+                      ? DismissDirection.startToEnd
+                      : DismissDirection.none,
+                  onDismissed: (direction) {
+                    FirebaseFirestore.instance
+                        .collection(widget.caminho)
+                        .doc(e.id)
+                        .delete();
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Item deletado'),
+                        action: SnackBarAction(
+                          label: 'DESFAZER',
+                          onPressed: () {
+                            FirebaseFirestore.instance
+                                .collection(widget.caminho)
+                                .doc(e.id)
+                                .set(e.data());
+                          },
                         ),
-                      );
-                    },
-                    background: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        color: Colors.transparent,
-                        child: const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Icon(Icons.delete_outlined, color: Colors.red),
-                        ),
-                        // Row(
-                        //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        //   children: const [
-                        //     Padding(
-                        //       padding: EdgeInsets.all(16.0),
-                        //       child:
-                        //           Icon(Icons.delete_outlined, color: Colors.red),
-                        //     ),
-                        //     Padding(
-                        //       padding: EdgeInsets.all(16.0),
-                        //       child:
-                        //           Icon(Icons.delete_outlined, color: Colors.red),
-                        //     ),
-                        //   ],
-                        // ),
+                      ),
+                    );
+                  },
+                  background: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      color: Colors.transparent,
+                      child: const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Icon(Icons.delete_outlined, color: Colors.red),
                       ),
                     ),
-                    child: MyItems(
-                      document: e,
-                      caminho: widget.caminho,
-                    ),
                   ),
-                )
-                .toList(),
+                  child: MyItems(
+                    document: e,
+                    caminho: widget.caminho,
+                    user: auth.currentUser!.uid,
+                    longPress: widget.longPress,
+                    longPressActive: widget.longPressActive,
+                    incrementSelecionado: widget.incrementSelecionado,
+                    decrementSelecionado: widget.decrementSelecionado,
+                    handleSelected: widget.handleSelected,
+                    selected: widget.selected,
+                    isSelected: isSelected,
+                  ),
+                );
+              },
+            ).toList(),
           ],
         );
       },

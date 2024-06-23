@@ -10,12 +10,14 @@ class ShowItemModal extends StatefulWidget {
   final BuildContext context;
   final DocumentSnapshot<Object?> document;
   final String caminho;
+  final String user;
 
   const ShowItemModal({
     super.key,
     required this.context,
     required this.document,
     required this.caminho,
+    required this.user,
   });
 
   @override
@@ -380,7 +382,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
                                     type = 'Money';
                                   }
 
-                                  if (campo == "Nome") {
+                                  if (campo == "Nome" || campo == widget.user) {
                                     return const SizedBox.shrink();
                                   }
 

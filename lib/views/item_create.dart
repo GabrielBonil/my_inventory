@@ -6,7 +6,12 @@ import 'package:tg/components/field_model_builder.dart';
 
 class ItemCreatePage extends StatefulWidget {
   final String caminho;
-  const ItemCreatePage({super.key, required this.caminho});
+  final String currentPath;
+  const ItemCreatePage({
+    super.key,
+    required this.caminho,
+    required this.currentPath,
+  });
 
   @override
   State<ItemCreatePage> createState() => _ItemCreatePageState();
@@ -17,7 +22,7 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
 
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
-  
+
   List<String> fieldList = [];
   List<String> typeList = [];
   List valueList = [];
@@ -52,12 +57,14 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
     if (formKey.currentState!.validate()) {
       formKey.currentState!.save();
 
-      //salvar os dados no banco de dados...
       Map<String, dynamic> data = {};
 
       for (int i = 0; i < fieldList.length; i++) {
         data[fieldList[i]] = valueList[i];
       }
+
+      data[auth.currentUser!.uid] = widget.currentPath;
+
       firestore.collection(widget.caminho).add(data);
 
       Navigator.of(context).pop();
@@ -91,9 +98,10 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
     }
   }
 
-  void getModelos() async{
+  void getModelos() async {
     listaModelos.clear();
-    var documento = await firestore.collection('users').doc(auth.currentUser!.uid).get();
+    var documento =
+        await firestore.collection('users').doc(auth.currentUser!.uid).get();
     documento.data()!.forEach((key, value) {
       setState(() {
         listaModelos.add(key);
@@ -104,14 +112,15 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
     });
   }
 
-  void handleSelect(String? modelo) async{
-    if (modelo != "Criar Modelo"){
+  void handleSelect(String? modelo) async {
+    if (modelo != "Criar Modelo") {
       setState(() {
         fieldList.clear();
         typeList.clear();
         valueList.clear();
       });
-      var documento = await firestore.collection('users').doc(auth.currentUser!.uid).get();
+      var documento =
+          await firestore.collection('users').doc(auth.currentUser!.uid).get();
       Map<String, dynamic>? mapaSelecionado = documento.data()?[modelo];
       mapaSelecionado!.forEach((key, value) {
         // print("Key: $key | Value: $value");
@@ -275,7 +284,13 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
                                       ),
                                       DropdownButtonFormField<String>(
                                         value: selectedType,
-                                        items: ['Descrição', 'Número Inteiro', 'Número Decimal', 'Dinheiro', 'Calendário'].map((e) {
+                                        items: [
+                                          'Descrição',
+                                          'Número Inteiro',
+                                          'Número Decimal',
+                                          'Dinheiro',
+                                          'Calendário'
+                                        ].map((e) {
                                           return DropdownMenuItem<String>(
                                             value: e,
                                             child: Text(e),
@@ -316,7 +331,8 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
                                 ),
                               );
                             },
-                            transitionDuration: const Duration(milliseconds: 300),
+                            transitionDuration:
+                                const Duration(milliseconds: 300),
                           );
                         },
                         child: const Text("Criar campo"),

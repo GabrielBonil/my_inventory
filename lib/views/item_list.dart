@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -23,7 +25,7 @@ class _ItemListPageState extends State<ItemListPage> {
   bool subCollectionsExist = false;
   late List<String> subColecoes;
   List<DocumentSnapshot> outrosDocumentos = [];
-  late String caminho = 'users/${auth.currentUser!.uid}/MyInventory';
+  late String caminho = 'users/$user/MyInventory';
   String tituloPagina = 'MyInventory';
   List<String> historicoTitulos = ['MyInventory'];
   List<String> historicoNavegacao = [];
@@ -34,6 +36,18 @@ class _ItemListPageState extends State<ItemListPage> {
   int selecionado = 0;
   String nomeEditado = '';
   List<String> selected = [];
+  late String currentPath = user;
+  late String user = auth.currentUser!.uid;
+
+  void updateCurrentPath(String uid) async {
+    setState(() {
+      historicoNavegacao.add(currentPath);
+      currentPath = uid;
+    });
+    updateTitle(currentPath);
+    var currentName = await getFolderName(currentPath);
+    historicoTitulos.add(currentName);
+  }
 
   void _longPressActive(String key) {
     setState(() {
@@ -65,49 +79,19 @@ class _ItemListPageState extends State<ItemListPage> {
     });
   }
 
-  void _updatePath(String novoCaminho) {
-    setState(() {
-      historicoNavegacao.add(caminho);
-      caminho = novoCaminho;
-      // historicoTitulos.add(caminho.split('/').last);
-      var temporaryKey = caminho.split('/').last;
-      firestore
-          .collection(historicoNavegacao.last)
-          .doc(auth.currentUser!.uid)
-          .get()
-          .then((doc) {
-        Map<String, String> places = {};
-
-        if (doc.exists) {
-          var existingPlaces = doc.get('places');
-          if (existingPlaces is Map) {
-            places = Map<String, String>.from(existingPlaces);
-          }
-        }
-        if (places.containsKey(temporaryKey)) {
-          String? value = places[temporaryKey];
-          if (value != null) {
-            historicoTitulos.add(value);
-          }
-        }
-      });
-    });
-    updateTitle(caminho);
-  }
-
   void voltar() {
     if (historicoNavegacao.isNotEmpty) {
       setState(() {
-        caminho = historicoNavegacao.last;
+        currentPath = historicoNavegacao.last;
       });
       historicoNavegacao.removeLast();
-      updateTitle(caminho);
+      updateTitle(currentPath);
       historicoTitulos.removeLast();
     }
   }
 
   void _handlePathNavigate(int index) {
-    if (longPress){
+    if (longPress) {
       return;
     }
     var handleCaminho = "";
@@ -122,8 +106,8 @@ class _ItemListPageState extends State<ItemListPage> {
       }
 
       setState(() {
-        caminho = handleCaminho;
-        updateTitle(caminho);
+        currentPath = handleCaminho;
+        updateTitle(currentPath);
       });
     }
   }
@@ -131,46 +115,23 @@ class _ItemListPageState extends State<ItemListPage> {
   void home() {
     if (historicoNavegacao.isNotEmpty) {
       setState(() {
-        caminho = 'users/${auth.currentUser!.uid}/MyInventory';
+        currentPath = user;
       });
       historicoNavegacao.clear();
-      updateTitle(caminho);
+      updateTitle(currentPath);
       historicoTitulos = ['MyInventory'];
     }
   }
 
-  void updateTitle(String caminho) {
-    var temporaryKey = caminho.split('/').last;
-    String newTitle = caminho.split('/').last;
-    // print(newTitle);
-    //var newTitle = caminho.split('/');
-    if (!historicoNavegacao.isNotEmpty) {
+  void updateTitle(String currentPath) async {
+    if (currentPath == user) {
       setState(() {
-        tituloPagina = newTitle;
+        tituloPagina = "MyInventory";
       });
     } else {
-      firestore
-          .collection(historicoNavegacao.last)
-          .doc(auth.currentUser!.uid)
-          .get()
-          .then((doc) {
-        Map<String, String> places = {};
-
-        if (doc.exists) {
-          var existingPlaces = doc.get('places');
-          if (existingPlaces is Map) {
-            places = Map<String, String>.from(existingPlaces);
-          }
-        }
-        if (places.containsKey(temporaryKey)) {
-          String? value = places[temporaryKey];
-          if (value != null) {
-            setState(() {
-              newTitle = value;
-              tituloPagina = newTitle;
-            });
-          }
-        }
+      var title = await getFolderName(currentPath);
+      setState(() {
+        tituloPagina = title;
       });
     }
 
@@ -183,35 +144,149 @@ class _ItemListPageState extends State<ItemListPage> {
     });
   }
 
+  Future<String> getFolderName(String uid) async {
+    var doc =
+        await FirebaseFirestore.instance.collection(caminho).doc(user).get();
+    var places = doc.data()?['places'] ?? {};
+    return places[uid]?['name'] ?? '';
+  }
+
+  Future<String> getDocumentName(String uid) async {
+    var doc =
+        await FirebaseFirestore.instance.collection(caminho).doc(uid).get();
+    return doc.data()?['Nome'] ?? '';
+  }
+
+  void handleEdit(String newName, String id) async {
+    DocumentSnapshot doc = await firestore.collection(caminho).doc(id).get();
+    if (doc.exists) {
+      saveItemName(id, newName);
+      return;
+    }
+    onSubcollectionEdited(newName, id);
+  }
+
+  void handleDelete(List<String> ids) async {
+    List<String> docIds = [];
+    List<String> folderIds = [];
+
+    for (String id in ids) {
+      DocumentSnapshot doc = await firestore.collection(caminho).doc(id).get();
+      if (doc.exists) {
+        docIds.add(id);
+      } else {
+        folderIds.add(id);
+      }
+    }
+
+    // Mover documentos (itens) para a "Lixeira"
+    for (String id in docIds) {
+      var itemRef = firestore.collection(caminho).doc(id);
+
+      await itemRef.update({user: 'Lixeira'});
+    }
+
+    // Mover pastas (subcoleções) para a "Lixeira"
+    var userDoc = await firestore.collection(caminho).doc(user).get();
+    if (userDoc.exists) {
+      Map<String, dynamic> places =
+          Map<String, dynamic>.from(userDoc.get('places'));
+
+      for (String id in folderIds) {
+        if (places.containsKey(id)) {
+          places[id][user] = 'Lixeira';
+        }
+      }
+
+      await firestore.collection(caminho).doc(user).set({'places': places});
+    }
+
+    resetLongPress();
+
+    // Exibir Snackbar com opção de desfazer
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Exclusão realizada'),
+        action: SnackBarAction(
+          label: 'Desfazer',
+          onPressed: () async {
+            // Restaurar pastas deletadas
+            var userDoc = await firestore.collection(caminho).doc(user).get();
+            if (userDoc.exists) {
+              Map<String, dynamic> places =
+                  Map<String, dynamic>.from(userDoc.get('places'));
+
+              for (String id in folderIds) {
+                places[id][user] = currentPath;
+              }
+
+              await firestore
+                  .collection(caminho)
+                  .doc(user)
+                  .set({'places': places});
+            }
+
+            // Restaurar itens da "Lixeira"
+            for (String id in docIds) {
+              var itemRef = firestore.collection(caminho).doc(id);
+              await itemRef.update(
+                  {user: currentPath}); // Restaurar para o usuário atual
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> handleMove(String destinationPath, List<String> ids) async {
+    var userDoc = await firestore.collection(caminho).doc(user).get();
+    Map<String, dynamic> places = {};
+    if (userDoc.exists) {
+      places = Map<String, dynamic>.from(userDoc.get('places'));
+    }
+
+    for (String id in ids) {
+      DocumentSnapshot doc = await firestore.collection(caminho).doc(id).get();
+      if (doc.exists) {
+        await firestore
+            .collection(caminho)
+            .doc(id)
+            .update({auth.currentUser!.uid: destinationPath});
+      } else {
+        if (places.containsKey(id)) {
+          places[id][auth.currentUser!.uid] = destinationPath;
+        }
+      }
+    }
+
+    if (userDoc.exists) {
+      await firestore.collection(caminho).doc(user).set({'places': places});
+    }
+  }
+
+  void saveItemName(String itemId, String newName) {
+    var itemRef = firestore.collection(caminho).doc(itemId);
+    itemRef.update({'Nome': newName});
+  }
+
   void onSubcollectionCreated(String subcollectionName) {
-    firestore.collection(caminho).doc(auth.currentUser!.uid).get().then((doc) {
-      Map<String, String> places = {};
+    firestore.collection(caminho).doc(user).get().then((doc) {
+      Map<String, dynamic> places = {};
 
       if (doc.exists) {
         var existingPlaces = doc.get('places');
         if (existingPlaces is Map) {
-          places = Map<String, String>.from(existingPlaces);
+          places = Map<String, dynamic>.from(existingPlaces);
         }
       }
 
-      if (!places.containsValue(subcollectionName)) {
+      if (!places.values.any((place) => place['name'] == subcollectionName)) {
         var uuid = const Uuid();
         var codigo = uuid.v4();
 
-        places[codigo] = subcollectionName;
+        places[codigo] = {'name': subcollectionName, user: currentPath};
 
-        //Adicionando na lista de lugares (do documento)
-        firestore
-            .collection(caminho)
-            .doc(auth.currentUser!.uid)
-            .set({'places': places});
-        //Adicionando a collection o uid, criando o documento com o Authcode e a lista de places desse lugar
-        firestore
-            .collection(caminho)
-            .doc(auth.currentUser!.uid)
-            .collection(codigo)
-            .doc(auth.currentUser!.uid)
-            .set({'places': {}});
+        firestore.collection(caminho).doc(user).set({'places': places});
       } else {
         Fluttertoast.showToast(
           msg: "Pasta $subcollectionName já existente",
@@ -227,95 +302,74 @@ class _ItemListPageState extends State<ItemListPage> {
   }
 
   void onSubcollectionsMoved(List<String> selectedUids) async {
-  // Abrir o modal de seleção de destino
-  showModalBottomSheet(
-    context: context,
-    builder: (BuildContext context) {
-      return DestinationSelector(
-        selectedUids: selectedUids,
-        onDestinationSelected: (String destinationPath) {
-          moveSubcollections(selectedUids, destinationPath);
-        },
-      );
-    },
-  );
-}
-
-void moveSubcollections(List<String> selectedUids, String destinationPath) async {
-  var doc = await firestore.collection(caminho).doc(auth.currentUser!.uid).get();
-  var places = doc.get('places');
-
-  Map<String, String> movedPlaces = {};
-
-  if (places != null) {
-    for (String uid in selectedUids) {
-      if (places.containsKey(uid)) {
-        movedPlaces[uid] = places[uid];
-        places.remove(uid);
-      }
-    }
-
-    await firestore.collection(caminho).doc(auth.currentUser!.uid).update({'places': places});
-
-    var destinationDoc = await firestore.collection(destinationPath).doc(auth.currentUser!.uid).get();
-    var destinationPlaces = destinationDoc.exists ? destinationDoc.get('places') : {};
-
-    movedPlaces.forEach((uid, name) {
-      destinationPlaces[uid] = name;
-    });
-
-    await firestore.collection(destinationPath).doc(auth.currentUser!.uid).set({'places': destinationPlaces});
-
-    // ignore: use_build_context_synchronously
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Subcoleções movidas para $destinationPath')),
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return DestinationSelector(
+          selectedUids: selectedUids,
+          onDestinationSelected: (String destinationPath) {
+            move(selectedUids, destinationPath);
+          },
+        );
+      },
     );
   }
-}
+
+  void move(List<String> selectedUids, String destinationPath) async {
+    await handleMove(destinationPath, selectedUids);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Itens e pastas movidos'),
+        action: SnackBarAction(
+          label: 'Desfazer',
+          onPressed: () async {
+            await handleMove(auth.currentUser!.uid, selectedUids);
+          },
+        ),
+      ),
+    );
+
+    resetLongPress();
+  }
+
+  void resetLongPress() {
+    setState(() {
+      longPress = false;
+      selecionado = 0;
+      selected = [];
+    });
+  }
 
   void onSubcollectionsDeleted(List<String> uids) async {
-    var doc =
-        await firestore.collection(caminho).doc(auth.currentUser!.uid).get();
-    var places = doc.get('places');
+    var doc = await firestore.collection(caminho).doc(user).get();
+    if (doc.exists) {
+      Map<String, dynamic> places =
+          Map<String, dynamic>.from(doc.get('places'));
+      Map<String, dynamic> deletedPlaces = {};
 
-    Map<String, String> deletedPlaces = {};
-
-    if (places != null) {
       for (String uid in uids) {
         if (places.containsKey(uid)) {
-          String deletedName = places[uid];
-          deletedPlaces[uid] = deletedName;
+          deletedPlaces[uid] = places[uid];
           places.remove(uid);
         }
       }
 
-      setState(() {
-        longPress = false;
-        selecionado = 0;
-        selected = [];
-      });
+      resetLongPress();
 
-      await firestore
-          .collection(caminho)
-          .doc(auth.currentUser!.uid)
-          .update({'places': places});
+      await firestore.collection(caminho).doc(user).set({'places': places});
 
-      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Arquivos excluídos'),
+          content: const Text('Subcoleções excluídas'),
           action: SnackBarAction(
             label: 'Desfazer',
             onPressed: () async {
-              // Restaurar as subcoleções
-              deletedPlaces.forEach((uid, name) {
-                places[uid] = name;
-              });
-
+              places.addAll(deletedPlaces);
               await firestore
                   .collection(caminho)
-                  .doc(auth.currentUser!.uid)
-                  .update({'places': places});
+                  .doc(user)
+                  .set({'places': places});
             },
           ),
         ),
@@ -324,19 +378,15 @@ void moveSubcollections(List<String> selectedUids, String destinationPath) async
   }
 
   void onSubcollectionEdited(String novoNome, String idAtual) async {
-    await firestore
-        .collection(caminho)
-        .doc(auth.currentUser!.uid)
-        .get()
-        .then((doc) {
-      Map<String, dynamic> places = doc.get('places');
-      if (!places.containsValue(novoNome)) {
-        places[idAtual] = novoNome;
+    var doc = await firestore.collection(caminho).doc(user).get();
+    if (doc.exists) {
+      Map<String, dynamic> places =
+          Map<String, dynamic>.from(doc.get('places'));
 
-        firestore
-            .collection(caminho)
-            .doc(auth.currentUser!.uid)
-            .set({'places': places});
+      if (!places.values.any((place) => place['name'] == novoNome)) {
+        places[idAtual]['name'] = novoNome;
+
+        await firestore.collection(caminho).doc(user).set({'places': places});
       } else {
         Fluttertoast.showToast(
           msg: "Nome $novoNome já em uso",
@@ -348,8 +398,7 @@ void moveSubcollections(List<String> selectedUids, String destinationPath) async
           fontSize: 16.0,
         );
       }
-      novoNome = '';
-    });
+    }
   }
 
   Widget editSelecionado(
@@ -365,7 +414,12 @@ void moveSubcollections(List<String> selectedUids, String destinationPath) async
     );
   }
 
-  void editLongPress(String valor, String uid) {
+  void editLongPress(String uid) async {
+    var valor = await getFolderName(uid);
+
+    // ignore: unrelated_type_equality_checks
+    if (valor == "") valor = await getDocumentName(uid);
+
     final TextEditingController editController =
         TextEditingController(text: valor.toString());
     showGeneralDialog(
@@ -400,7 +454,7 @@ void moveSubcollections(List<String> selectedUids, String destinationPath) async
                   children: [
                     TextButton(
                       onPressed: () {
-                        onSubcollectionsDeleted(selected);
+                        handleDelete(selected);
                         Navigator.pop(context);
                       },
                       child: const Text(
@@ -413,7 +467,7 @@ void moveSubcollections(List<String> selectedUids, String destinationPath) async
                     ),
                     TextButton(
                       onPressed: () async {
-                        onSubcollectionEdited(editController.text, uid);
+                        handleEdit(editController.text, uid);
                         decrementSelecionado(uid);
                         Navigator.of(context).pop();
                       },
@@ -456,11 +510,11 @@ void moveSubcollections(List<String> selectedUids, String destinationPath) async
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
-    updateTitle(caminho);
-  }
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   updateCurrentPath(user);
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -468,11 +522,7 @@ void moveSubcollections(List<String> selectedUids, String destinationPath) async
       child: WillPopScope(
         onWillPop: () async {
           if (longPress) {
-            setState(() {
-              longPress = false;
-              selecionado = 0;
-              selected = [];
-            });
+            resetLongPress();
             return false;
           } else if (historicoNavegacao.isNotEmpty) {
             voltar();
@@ -496,7 +546,7 @@ void moveSubcollections(List<String> selectedUids, String destinationPath) async
                       if (selecionado == 1)
                         IconButton(
                           onPressed: () {
-                            return editLongPress(nomeEditado, selected[0]);
+                            return editLongPress(selected[0]);
                           },
                           icon: const Icon(
                             Icons.edit_outlined,
@@ -506,7 +556,7 @@ void moveSubcollections(List<String> selectedUids, String destinationPath) async
                       //Deletar todos no LongPress
                       IconButton(
                         onPressed: () {
-                          onSubcollectionsDeleted(selected);
+                          handleDelete(selected);
                         },
                         icon: const Icon(
                           Icons.delete_outline,
@@ -534,11 +584,7 @@ void moveSubcollections(List<String> selectedUids, String destinationPath) async
                       )
                 : IconButton(
                     onPressed: () {
-                      setState(() {
-                        longPress = false;
-                        selecionado = 0;
-                        selected = [];
-                      });
+                      resetLongPress();
                     },
                     icon: const Icon(Icons.close),
                   ),
@@ -575,7 +621,6 @@ void moveSubcollections(List<String> selectedUids, String destinationPath) async
           ),
           body: CustomStreamBuilder(
             caminho: caminho,
-            updatePath: _updatePath,
             historicoTitulos: historicoTitulos,
             handlePathNavigate: _handlePathNavigate,
             longPressActive: _longPressActive,
@@ -584,6 +629,8 @@ void moveSubcollections(List<String> selectedUids, String destinationPath) async
             decrementSelecionado: decrementSelecionado,
             handleSelected: handleSelected,
             selected: selected,
+            updateCurrentPath: updateCurrentPath,
+            currentPath: currentPath,
           ),
           floatingActionButton: SpeedDial(
             backgroundColor: Colors.black,
@@ -659,7 +706,10 @@ void moveSubcollections(List<String> selectedUids, String destinationPath) async
                 label: 'Item',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => ItemCreatePage(caminho: caminho),
+                    builder: (context) => ItemCreatePage(
+                      caminho: caminho,
+                      currentPath: currentPath,
+                    ),
                   ),
                 ),
               ),

@@ -20,7 +20,9 @@ class _DestinationSelectorState extends State<DestinationSelector> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
 
-  late  String currentPath = 'users/${auth.currentUser!.uid}/MyInventory';
+  late String user = auth.currentUser!.uid;
+  late String caminho = 'users/$user/MyInventory';
+  late String currentPath = user;
   List<String> folderHistory = [];
 
   @override
@@ -43,10 +45,7 @@ class _DestinationSelectorState extends State<DestinationSelector> {
           ),
           Expanded(
             child: FutureBuilder<DocumentSnapshot>(
-              future: firestore
-                  .collection(currentPath)
-                  .doc(auth.currentUser!.uid)
-                  .get(),
+              future: firestore.collection(caminho).doc(user).get(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -58,31 +57,57 @@ class _DestinationSelectorState extends State<DestinationSelector> {
 
                 var places =
                     snapshot.data!.get('places') as Map<String, dynamic>;
-                var folders = places.entries
-                    .where((entry) => !widget.selectedUids.contains(entry.key))
-                    .toList();
 
-                return ListView.builder(
-                  itemCount: folders.length,
-                  itemBuilder: (context, index) {
-                    var folder = folders[index];
-                    return ListTile(
-                      title: Text(folder.value),
-                      onTap: () {
-                        setState(() {
-                          folderHistory.add(currentPath);
-                          currentPath = '$currentPath/${auth.currentUser!.uid}/${folder.key}';
-                        });
-                      },
+                var folders = Map<String, dynamic>.from(
+                  places
+                    ..removeWhere((key, value) =>
+                        value[auth.currentUser!.uid] != currentPath ||
+                        widget.selectedUids.contains(key)),
+                );
+
+                folders = Map.fromEntries(folders.entries.toList()
+                  ..sort((e1, e2) => e1.value['name']
+                      .toLowerCase()
+                      .compareTo(e2.value['name'].toLowerCase())));
+
+                return Column(
+                  children: [
+                    ListTile(
+                      title: const Text('Mover para o caminho atual'),
                       trailing: IconButton(
                         icon: const Icon(Icons.check),
                         onPressed: () {
-                          widget.onDestinationSelected('$currentPath/${auth.currentUser!.uid}/${folder.key}');
+                          widget.onDestinationSelected(currentPath);
                           Navigator.pop(context);
                         },
                       ),
-                    );
-                  },
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: folders.length,
+                        itemBuilder: (context, index) {
+                          var folderKey = folders.keys.elementAt(index);
+                          var folder = folders[folderKey];
+                          return ListTile(
+                            title: Text(folder['name']),
+                            onTap: () {
+                              setState(() {
+                                folderHistory.add(currentPath);
+                                currentPath = folderKey;
+                              });
+                            },
+                            trailing: IconButton(
+                              icon: const Icon(Icons.check),
+                              onPressed: () {
+                                widget.onDestinationSelected(folderKey);
+                                Navigator.pop(context);
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
