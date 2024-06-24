@@ -11,6 +11,8 @@ class FieldModelBuilder extends StatelessWidget {
   final BuildContext context;
   final Future<void> Function(BuildContext, int, TextEditingController)
       selecionarData;
+  final void Function(int) onRemoveField; // Função para remover campos
+
   const FieldModelBuilder({
     super.key,
     required this.fieldList,
@@ -19,6 +21,7 @@ class FieldModelBuilder extends StatelessWidget {
     required this.validarItem,
     required this.context,
     required this.selecionarData,
+    required this.onRemoveField, // Parâmetro adicionado para remover campos
   });
 
   @override
@@ -72,7 +75,7 @@ class FieldModelBuilder extends StatelessWidget {
         ),
         onSaved: (newValue) {
           double novoValor;
-          if (!newValue!.contains(",")){
+          if (!newValue!.contains(",")) {
             novoValor = double.parse("$newValue.0");
           } else {
             novoValor = double.parse(newValue.replaceAll(',', '.'));
@@ -115,7 +118,9 @@ class FieldModelBuilder extends StatelessWidget {
         thousandSeparator: '.',
         leftSymbol: 'R\$',
         precision: 2,
-        initialValue: double.parse(valueList[index].replaceAll(RegExp(r'[^\d,]'), '').replaceAll(',', '.')),
+        initialValue: double.parse(valueList[index]
+            .replaceAll(RegExp(r'[^\d,]'), '')
+            .replaceAll(',', '.')),
       );
       formField = TextFormField(
         autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -131,10 +136,19 @@ class FieldModelBuilder extends StatelessWidget {
         validator: validarItem,
       );
     } else {
-      // You can add more field types here as needed
       return const SizedBox();
     }
 
-    return formField;
+    return Row(
+      children: [
+        Expanded(child: formField),
+        if (fieldList[index] !=
+            'Nome') // Adiciona um botão de remoção, exceto para o campo "Nome"
+          IconButton(
+            icon: const Icon(Icons.remove_circle),
+            onPressed: () => onRemoveField(index),
+          ),
+      ],
+    );
   }
 }

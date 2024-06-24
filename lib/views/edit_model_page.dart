@@ -42,7 +42,29 @@ class _EditModelPageState extends State<EditModelPage> {
           fieldList.add(key);
           typeList.add(value);
         });
+        // Garantindo que o "Nome" é o primeiro campo e ordenando o resto alfabéticamente
+        if (fieldList.contains("Nome")) {
+          int index = fieldList.indexOf("Nome");
+          fieldList.removeAt(index);
+          String type = typeList.removeAt(index);
+          fieldList.insert(0, "Nome");
+          typeList.insert(0, type);
+        }
+        List<MapEntry<String, String>> entries = List.generate(
+          fieldList.length,
+          (index) => MapEntry(fieldList[index], typeList[index]),
+        );
+        entries.sort((a, b) => a.key.compareTo(b.key));
+        entries.insert(
+            0,
+            entries
+                .removeAt(entries.indexWhere((entry) => entry.key == "Nome")));
+        fieldList = entries.map((entry) => entry.key).toList();
+        typeList = entries.map((entry) => entry.value).toList();
       }
+    } else {
+      fieldList.insert(0, "Nome");
+      typeList.insert(0, "Descrição");
     }
   }
 
@@ -53,7 +75,7 @@ class _EditModelPageState extends State<EditModelPage> {
         modelData[fieldList[i]] = typeList[i];
       }
 
-      if (originalName.isNotEmpty && originalName != _nameController.text){
+      if (originalName.isNotEmpty && originalName != _nameController.text) {
         await _firestore.collection('users').doc(_userId).update({
           originalName: FieldValue.delete(),
         });
@@ -114,10 +136,12 @@ class _EditModelPageState extends State<EditModelPage> {
                     return ListTile(
                       title: Text(fieldList[index]),
                       subtitle: Text(typeList[index]),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => _removeField(index),
-                      ),
+                      trailing: fieldList[index] == "Nome"
+                          ? null
+                          : IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () => _removeField(index),
+                            ),
                     );
                   },
                 ),

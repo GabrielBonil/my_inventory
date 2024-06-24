@@ -23,13 +23,13 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
 
-  List<String> fieldList = [];
-  List<String> typeList = [];
-  List valueList = [];
+  List<String> fieldList = ['Nome'];
+  List<String> typeList = ['Descrição'];
+  List valueList = [''];
   final TextEditingController novoCampoController = TextEditingController();
   late String? selectedType;
   List<String> listaModelos = [];
-  String? modeloSelecionado = "Padrão";
+  String? modeloSelecionado;
 
   void onNovoCampoCreated(String nome, var tipo) {
     setState(() {
@@ -50,6 +50,14 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
       if (tipo == 'Dinheiro') {
         valueList.add('0,00');
       }
+    });
+  }
+
+  void _removeField(int index) {
+    setState(() {
+      fieldList.removeAt(index);
+      typeList.removeAt(index);
+      valueList.removeAt(index);
     });
   }
 
@@ -107,89 +115,29 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
         listaModelos.add(key);
       });
     });
-    // setState(() {
-    //   listaModelos.add("Criar Modelo");
-    // });
+    listaModelos.sort();
   }
 
   void handleSelect(String? modelo) async {
-    // if (modelo == "Criar Modelo") {
-    //   String nomeModelo = '';
-    //   showGeneralDialog(
-    //     context: context,
-    //     pageBuilder: (ctx, a1, a2) {
-    //       return Container();
-    //     },
-    //     transitionBuilder: (ctx, a1, a2, child) {
-    //       var curve = Curves.easeInOut.transform(a1.value);
-    //       return Transform.scale(
-    //         scale: curve,
-    //         child: AlertDialog(
-    //           title: Row(
-    //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    //             children: [
-    //               const Text("Criar Modelo"),
-    //               IconButton(
-    //                 onPressed: () {
-    //                   Navigator.of(context).pop();
-    //                 },
-    //                 icon: const Icon(Icons.close),
-    //               ),
-    //             ],
-    //           ),
-    //           content: TextField(
-    //             // controller: _subcollectionNameController,
-    //             decoration: const InputDecoration(
-    //               labelText: 'Nome do Modelo',
-    //               hintText: 'Nome do Modelo',
-    //             ),
-    //             onChanged: (value) => nomeModelo = value,
-    //           ),
-    //           actions: <Widget>[
-    //             TextButton(
-    //               onPressed: () async {
-    //                 Map<String, dynamic> novoMapa = {};
-    //                 for (int i = 0; i < fieldList.length; i++) {
-    //                   novoMapa[fieldList[i]] = typeList[i];
-    //                 }
-
-    //                 await firestore
-    //                     .collection('users')
-    //                     .doc(auth.currentUser!.uid)
-    //                     .update({nomeModelo: novoMapa});
-
-    //                 getModelos();
-    //                 modeloSelecionado = nomeModelo;
-    //                 // ignore: use_build_context_synchronously
-    //                 Navigator.pop(context);
-    //               },
-    //               child: const Text(
-    //                 "Criar",
-    //                 style: TextStyle(
-    //                   color: Colors.blue,
-    //                   fontSize: 17,
-    //                 ),
-    //               ),
-    //             ),
-    //           ],
-    //         ),
-    //       );
-    //     },
-    //     transitionDuration: const Duration(milliseconds: 300),
-    //   );
-    //   return;
-    // }
     setState(() {
-      fieldList.clear();
-      typeList.clear();
-      valueList.clear();
+      fieldList = ['Nome'];
+      typeList = ['Descrição'];
+      valueList = [''];
     });
+
     var documento =
         await firestore.collection('users').doc(auth.currentUser!.uid).get();
     Map<String, dynamic>? mapaSelecionado = documento.data()?[modelo];
     mapaSelecionado!.forEach((key, value) {
-      // print("Key: $key | Value: $value");
-      onNovoCampoCreated(key, value);
+      if (key != 'Nome') {
+        onNovoCampoCreated(key, value);
+      }
+    });
+
+    setState(() {
+      fieldList.sort();
+      fieldList.remove('Nome');
+      fieldList.insert(0, 'Nome');
     });
   }
 
@@ -197,7 +145,6 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
   void initState() {
     super.initState();
     getModelos();
-    handleSelect("Padrão");
   }
 
   @override
@@ -211,7 +158,7 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
               underline: const SizedBox.shrink(),
               focusNode: FocusNode(canRequestFocus: false),
               value: modeloSelecionado,
-              // style: const TextStyle(color: Colors.white),
+              hint: const Text("Selecione um modelo"),
               items: listaModelos.map((e) {
                 return DropdownMenuItem<String>(
                   value: e,
@@ -243,6 +190,8 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
                       valueList: valueList,
                       validarItem: validarItem,
                       selecionarData: selecionarData,
+                      onRemoveField:
+                          _removeField, // Adiciona o handler de remoção de campos
                     ),
                     SizedBox(
                       width: MediaQuery.of(context).size.width -

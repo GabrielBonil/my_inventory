@@ -327,6 +327,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
                           child: Text(
                             widget.document["Nome"],
                             style: const TextStyle(
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: Colors.black,
                             ),
@@ -352,8 +353,13 @@ class _ShowItemModalState extends State<ShowItemModal> {
                               return const Text('Nenhum item encontrado.');
                             }
 
-                            final data =
+                            var data =
                                 snapshot.data?.data() as Map<String, dynamic>;
+                            data = Map.fromEntries(data.entries.toList()
+                              ..sort((e1, e2) => e1.key
+                                  .toLowerCase()
+                                  .compareTo(e2.key.toLowerCase())));
+
                             return ListView(
                               shrinkWrap: true,
                               children: [
