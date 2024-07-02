@@ -89,7 +89,11 @@ class _DestinationSelectorState extends State<DestinationSelector> {
                           var folderKey = folders.keys.elementAt(index);
                           var folder = folders[folderKey];
                           return ListTile(
-                            title: Text(folder['name']),
+                            title: Text(
+                              folder['name'],
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
                             onTap: () {
                               setState(() {
                                 folderHistory.add(currentPath);

@@ -13,6 +13,7 @@ class MyItems extends StatelessWidget {
   final Function() handleSelected;
   final List<String> selected;
   final bool isSelected;
+
   const MyItems({
     super.key,
     required this.document,
@@ -83,7 +84,6 @@ class MyItems extends StatelessWidget {
                       caminho: caminho,
                       user: user,
                     ),
-                    // const SizedBox.shrink(),
                   );
                 },
                 child: Padding(
@@ -102,27 +102,8 @@ class MyItems extends StatelessWidget {
                             document['Nome'], //.toCamelCase()
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          // Text(
-                          //   NumberFormat.currency(
-                          //     locale: 'pt_BR',
-                          //     decimalDigits: 2,
-                          //     symbol: 'R\$',
-                          //   ).format(history.price),
-                          // )
                         ],
                       ),
-                      // GestureDetector(
-                      //   onTap: onTap,
-                      //   child: history.isFavourite
-                      //       ? const Icon(
-                      //           Icons.favorite,
-                      //           color: Colors.red,
-                      //         )
-                      //       : const Icon(
-                      //           Icons.favorite_border,
-                      //           color: Colors.red,
-                      //         ),
-                      // )
                     ],
                   ),
                 ),

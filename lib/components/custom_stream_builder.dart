@@ -158,7 +158,11 @@ class _CustomStreamBuilderState extends State<CustomStreamBuilder> {
                                     size: iconSize,
                                     color: Colors.blue,
                                   ),
-                                  Text(e.value['name']),
+                                  Text(
+                                    e.value['name'],
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
                                 ],
                               ),
                               if (widget.longPress)

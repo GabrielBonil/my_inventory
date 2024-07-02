@@ -154,23 +154,37 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
         appBar: AppBar(
           title: const Text("Novo Item"),
           actions: [
-            DropdownButton<String>(
-              underline: const SizedBox.shrink(),
-              focusNode: FocusNode(canRequestFocus: false),
-              value: modeloSelecionado,
-              hint: const Text("Selecione um modelo"),
-              items: listaModelos.map((e) {
-                return DropdownMenuItem<String>(
-                  value: e,
-                  child: Text(e),
-                );
-              }).toList(),
-              onChanged: (newValue) {
-                setState(() {
-                  modeloSelecionado = newValue;
-                  handleSelect(newValue);
-                });
-              },
+            Container(
+              margin: const EdgeInsets.symmetric(
+                  horizontal: 12.0), // Ajuste a margem conforme necessário
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  focusNode: FocusNode(
+                      canRequestFocus:
+                          false), // Evita que o dropdown receba foco
+                  value: modeloSelecionado,
+                  hint: const Text("Selecione um modelo"),
+                  items: listaModelos.map((e) {
+                    return DropdownMenuItem<String>(
+                      value: e,
+                      child: SizedBox(
+                        width: 200, // Defina uma largura máxima para o texto
+                        child: Text(
+                          e,
+                          overflow: TextOverflow.ellipsis, // Define o overflow
+                          maxLines: 2, // Número máximo de linhas
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (newValue) {
+                    setState(() {
+                      modeloSelecionado = newValue;
+                      handleSelect(newValue);
+                    });
+                  },
+                ),
+              ),
             ),
           ],
         ),
@@ -201,6 +215,9 @@ class _ItemCreatePageState extends State<ItemCreatePage> {
                           selectedType = 'Descrição';
                           showGeneralDialog(
                             context: context,
+                            barrierDismissible: true,
+                            barrierLabel: MaterialLocalizations.of(context)
+                                .modalBarrierDismissLabel,
                             pageBuilder: (ctx, a1, a2) {
                               return Container();
                             },

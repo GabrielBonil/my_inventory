@@ -61,7 +61,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
       setState(() {
         if (tipo == 'Descrição') {
           firestore.collection(widget.caminho).doc(widget.document.id).set(
-            {nome: ''},
+            {nome: 'Nova Descrição'},
             SetOptions(merge: true),
           );
         }
@@ -85,7 +85,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
         }
         if (tipo == 'Dinheiro') {
           firestore.collection(widget.caminho).doc(widget.document.id).set(
-            {nome: 'RS:0,00'},
+            {nome: "R\$0,00"},
             SetOptions(merge: true),
           );
         }
@@ -150,6 +150,28 @@ class _ShowItemModalState extends State<ShowItemModal> {
           // },
           onChanged: (value) => nomeEditado = value,
         );
+      } else if (type == 'Dinheiro' ||
+          editController.text.substring(0, 2) == "R\$") {
+        var moneyController = MoneyMaskedTextController(
+          decimalSeparator: ',',
+          thousandSeparator: '.',
+          leftSymbol: 'R\$',
+          precision: 2,
+          initialValue: double.parse(editController.text
+              .substring(2)
+              .replaceAll(RegExp(r'[^\d,]'), '')
+              .replaceAll(',', '.')),
+        );
+        return TextField(
+          controller: moneyController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Novo valor',
+            hintText: 'Novo valor',
+          ),
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          onChanged: (value) => nomeEditado = value,
+        );
       } else if (type == 'Descrição') {
         return TextField(
           controller: editController,
@@ -178,6 +200,9 @@ class _ShowItemModalState extends State<ShowItemModal> {
       }
       showGeneralDialog(
         context: context,
+        barrierDismissible: true,
+        barrierLabel:
+            MaterialLocalizations.of(context).modalBarrierDismissLabel,
         pageBuilder: (ctx, a1, a2) {
           return Container();
         },
@@ -189,7 +214,7 @@ class _ShowItemModalState extends State<ShowItemModal> {
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("Editar $campo"),
+                  Expanded(child: Text("Editar $campo")),
                   IconButton(
                     onPressed: () {
                       Navigator.of(context).pop();
@@ -557,6 +582,9 @@ class _ShowItemModalState extends State<ShowItemModal> {
                                 TextEditingController(text: '');
                             showGeneralDialog(
                               context: context,
+                              barrierDismissible: true,
+                              barrierLabel: MaterialLocalizations.of(context)
+                                  .modalBarrierDismissLabel,
                               pageBuilder: (ctx, a1, a2) {
                                 return Container();
                               },
@@ -621,7 +649,9 @@ class _ShowItemModalState extends State<ShowItemModal> {
                                           if (novoCampo.isNotEmpty) {
                                             Navigator.pop(context);
                                             onNovoCampoCreated(
-                                                novoCampo, selectedType);
+                                              novoCampo,
+                                              selectedType,
+                                            );
                                           }
                                           novoCampoController.clear();
                                         },

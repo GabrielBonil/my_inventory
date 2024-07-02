@@ -6,9 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:myinventory/components/custom_stream_builder.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:myinventory/views/item_create.dart';
+import 'package:myinventory/views/notification_page.dart';
 import 'package:uuid/uuid.dart';
 // import 'package:myinventory/components/loading.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+// import 'package:fluttertoast/fluttertoast.dart';
 import 'package:myinventory/components/destination_selector.dart';
 import 'package:myinventory/views/item_model.dart';
 
@@ -281,24 +282,24 @@ class _ItemListPageState extends State<ItemListPage> {
         }
       }
 
-      if (!places.values.any((place) => place['name'] == subcollectionName)) {
-        var uuid = const Uuid();
-        var codigo = uuid.v4();
+      // if (!places.values.any((place) => place['name'] == subcollectionName)) {
+      var uuid = const Uuid();
+      var codigo = uuid.v4();
 
-        places[codigo] = {'name': subcollectionName, user: currentPath};
+      places[codigo] = {'name': subcollectionName, user: currentPath};
 
-        firestore.collection(caminho).doc(user).set({'places': places});
-      } else {
-        Fluttertoast.showToast(
-          msg: "Pasta $subcollectionName já existente",
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.TOP,
-          timeInSecForIosWeb: 5,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-      }
+      firestore.collection(caminho).doc(user).set({'places': places});
+      // } else {
+      // Fluttertoast.showToast(
+      // msg: "Pasta $subcollectionName já existente",
+      // toastLength: Toast.LENGTH_LONG,
+      // gravity: ToastGravity.TOP,
+      // timeInSecForIosWeb: 5,
+      // backgroundColor: Colors.red,
+      // textColor: Colors.white,
+      // fontSize: 16.0,
+      // );
+      // }
     });
   }
 
@@ -384,21 +385,21 @@ class _ItemListPageState extends State<ItemListPage> {
       Map<String, dynamic> places =
           Map<String, dynamic>.from(doc.get('places'));
 
-      if (!places.values.any((place) => place['name'] == novoNome)) {
-        places[idAtual]['name'] = novoNome;
+      // if (!places.values.any((place) => place['name'] == novoNome)) {
+      places[idAtual]['name'] = novoNome;
 
-        await firestore.collection(caminho).doc(user).set({'places': places});
-      } else {
-        Fluttertoast.showToast(
-          msg: "Nome $novoNome já em uso",
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.TOP,
-          timeInSecForIosWeb: 5,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-      }
+      await firestore.collection(caminho).doc(user).set({'places': places});
+      // } else {
+      // Fluttertoast.showToast(
+      // msg: "Nome $novoNome já em uso",
+      // toastLength: Toast.LENGTH_LONG,
+      // gravity: ToastGravity.TOP,
+      // timeInSecForIosWeb: 5,
+      // backgroundColor: Colors.red,
+      // textColor: Colors.white,
+      // fontSize: 16.0,
+      // );
+      // }
     }
   }
 
@@ -425,6 +426,8 @@ class _ItemListPageState extends State<ItemListPage> {
         TextEditingController(text: valor.toString());
     showGeneralDialog(
       context: context,
+      barrierDismissible: true,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
       pageBuilder: (ctx, a1, a2) {
         return Container();
       },
@@ -548,36 +551,6 @@ class _ItemListPageState extends State<ItemListPage> {
                             ? Text("$selecionado item")
                             : Text("$selecionado itens"),
                       ),
-                      if (selecionado == 1)
-                        IconButton(
-                          onPressed: () {
-                            return editLongPress(selected[0]);
-                          },
-                          icon: const Icon(
-                            Icons.edit_outlined,
-                            color: Colors.white,
-                          ),
-                        ),
-                      //Deletar todos no LongPress
-                      IconButton(
-                        onPressed: () {
-                          handleDelete(selected);
-                        },
-                        icon: const Icon(
-                          Icons.delete_outline,
-                          color: Colors.white,
-                        ),
-                      ),
-                      //Mover LongPress
-                      IconButton(
-                        onPressed: () {
-                          onSubcollectionsMoved(selected);
-                        },
-                        icon: const Icon(
-                          Icons.drive_file_move_outline,
-                          color: Colors.white,
-                        ),
-                      ),
                     ],
                   ),
             leading: !longPress
@@ -594,6 +567,42 @@ class _ItemListPageState extends State<ItemListPage> {
                     icon: const Icon(Icons.close),
                   ),
             actions: [
+              !longPress
+                  ? const SizedBox.shrink()
+                  : Row(
+                      children: [
+                        if (selecionado == 1)
+                          IconButton(
+                            onPressed: () {
+                              return editLongPress(selected[0]);
+                            },
+                            icon: const Icon(
+                              Icons.edit_outlined,
+                              color: Colors.white,
+                            ),
+                          ),
+                        //Deletar todos no LongPress
+                        IconButton(
+                          onPressed: () {
+                            handleDelete(selected);
+                          },
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.white,
+                          ),
+                        ),
+                        //Mover LongPress
+                        IconButton(
+                          onPressed: () {
+                            onSubcollectionsMoved(selected);
+                          },
+                          icon: const Icon(
+                            Icons.drive_file_move_outline,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
               //Home
               // if (returnable)
               //   IconButton(
@@ -653,6 +662,9 @@ class _ItemListPageState extends State<ItemListPage> {
                 onTap: () => {
                   showGeneralDialog(
                     context: context,
+                    barrierDismissible: true,
+                    barrierLabel: MaterialLocalizations.of(context)
+                        .modalBarrierDismissLabel,
                     pageBuilder: (ctx, a1, a2) {
                       return Container();
                     },
@@ -724,6 +736,15 @@ class _ItemListPageState extends State<ItemListPage> {
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => const ModelManagementPage(),
+                  ),
+                ),
+              ),
+              SpeedDialChild(
+                child: const Icon(Icons.notifications),
+                label: 'Avisos',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationPage(),
                   ),
                 ),
               ),
